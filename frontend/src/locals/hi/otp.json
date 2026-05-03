@@ -1,0 +1,21 @@
+{
+    "title": "OTP से लॉगिन करें",
+    "step1": "अपना ईमेल या फ़ोन दर्ज करें",
+    "step2": "अपने डिवाइस पर भेजा गया OTP दर्ज करें",
+    "contactLabel": "ईमेल या फ़ोन",
+    "contactPlaceholder": "ईमेल या फ़ोन दर्ज करें",
+
+    "setOtp": "OTP प्राप्त करें",
+    "sending": "भेजा जा रहा है...",
+
+    "otpLabel": "OTP दर्ज करें",
+    "otpPlaceholder": "OTP दर्ज करें",
+    "verifyOtp": "OTP सत्यापित करें",
+    "verifying": "सत्यापित हो रहा है...",
+
+    "backToLogin": "लॉगिन पर वापस जाएं",
+    "signIn": "लॉग इन करें",
+
+    "errContact": "ईमेल या फ़ोन दर्ज करें",
+    "errOtp": "अमान्य OTP"
+  }

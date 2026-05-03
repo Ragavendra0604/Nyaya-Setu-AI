@@ -1,0 +1,46 @@
+{
+  "guideBadge": "Your Trustworthy Legal Guide",
+  "heroTitle": "AI Legal Help for Every Indian",
+  "heroDescription": "Navigate the complexities of Indian law with clarity and confidence.",
+  "primaryAction": "Start Chat",
+  "secondaryAction": "Try Demo",
+  "visualTitle": "Justice for All",
+
+  "sectionTitle": "Designed for Empathetic Clarity",
+  "sectionSubtitle": "Breaking down barriers to legal understanding.",
+
+  "features": {
+    "multilingual": {
+      "title": "Multilingual Support",
+      "body": "Interact seamlessly in multiple languages."
+    },
+    "voice": {
+      "title": "Voice Interaction",
+      "body": "Speak your queries directly."
+    },
+    "simple": {
+      "title": "Simple Explanations",
+      "body": "Legal terms simplified for everyone."
+    }
+  },
+
+  "practicalTitle": "Practical Legal Assistance",
+  "practicalSubtitle": "Explore common scenarios.",
+
+  "practical": {
+    "fir": {
+      "title": "FIR Filing Guidance",
+      "body": "Step-by-step FIR process."
+    },
+    "legalAid": {
+      "title": "Accessing Legal Aid",
+      "body": "Find free legal help."
+    },
+    "tenant": {
+      "title": "Tenant Rights",
+      "body": "Understand rental laws."
+    }
+  },
+
+  "exploreLabel": "Explore"
+}

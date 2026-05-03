@@ -1,0 +1,22 @@
+{
+    "title": "Login with OTP",
+    "step1": "Enter your email or phone",
+    "step2": "Enter OTP sent to your device",
+
+    "contactLabel": "Email or Phone",
+    "contactPlaceholder": "Enter email or phone",
+
+    "getOtp": "Get OTP",
+    "sending": "Sending...",
+
+    "otpLabel": "Enter OTP",
+    "otpPlaceholder": "Enter OTP",
+    "verifyOtp": "Verify OTP",
+    "verifying": "Verifying...",
+
+    "backToLogin": "Back to Login",
+    "signIn": "Sign In",
+
+    "errContact": "Enter email or phone",
+    "errOtp": "Invalid OTP"
+}

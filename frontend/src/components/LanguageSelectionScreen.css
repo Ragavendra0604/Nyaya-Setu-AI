@@ -1,0 +1,149 @@
+:root {
+  --bg: #f1f5f1;
+  --panel: #f5f8f4;
+  --card: #ffffff;
+  --text: #18231b;
+  --muted: #616d63;
+  --brand: #11953a;
+  --brand-soft: #e7f7ea;
+  --line: #e7ece7;
+  --shadow: 0 18px 40px rgba(26, 45, 31, 0.08);
+}
+
+.language-screen {
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  color: var(--text);
+  background: linear-gradient(180deg, #f7faf7 0%, #eef3ef 100%);
+  overflow: hidden;
+}
+
+.language-card {
+  width: min(100%, 430px);
+  max-height: calc(100vh - 24px);
+  background: var(--panel);
+  padding: clamp(28px, 4vh, 44px) 24px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.brand-badge {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.brand-badge img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #1b8f3a;
+  padding: 4px;
+}
+
+.language-card h1 {
+  margin: 0;
+  text-align: center;
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  font-weight: 700;
+  color: #0a8b33;
+}
+
+.language-card p {
+  margin: 10px 0 22px;
+  text-align: center;
+  color: var(--muted);
+  font-size: clamp(0.96rem, 2vh, 1.05rem);
+  line-height: 1.45;
+}
+
+.language-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.language-option {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.language-option:hover {
+  transform: translateY(-2px);
+  border-color: #d6e9d9;
+  background: var(--brand-soft);
+  box-shadow: 0 22px 44px rgba(26, 45, 31, 0.1);
+}
+
+.language-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--brand-soft);
+  color: #0b7f2f;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+
+.language-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.language-copy strong {
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.language-copy small {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.language-arrow {
+  color: #b9c6b8;
+  background: var(--brand-soft);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+@media (max-width: 520px) {
+  .language-screen {
+    padding: 8px;
+  }
+
+  .language-card {
+    max-height: calc(100vh - 16px);
+    padding: 24px 16px 18px;
+  }
+
+  .language-option {
+    padding: 14px 14px;
+  }
+}

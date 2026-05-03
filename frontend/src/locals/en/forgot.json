@@ -1,0 +1,32 @@
+{
+    "title": "Reset Password",
+    "step1": "Enter your email or phone",
+    "step2": "Enter OTP sent to your device",
+    "step3": "Set your new password",
+
+    "contactLabel": "Email or Phone",
+    "contactPlaceholder": "Enter email or phone",
+
+    "sendOtp": "Send OTP",
+    "sending": "Sending...",
+
+    "otpLabel": "Enter OTP",
+    "otpPlaceholder": "Enter OTP",
+    "verifyOtp": "Verify OTP",
+
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "New password",
+
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm password",
+
+    "updatePassword": "Update Password",
+    "updating": "Updating...",
+
+    "backToLogin": "Back to Login",
+    "signIn": "Sign In",
+
+    "errContact": "Enter email or phone",
+    "errOtp": "Invalid OTP",
+    "errPassword": "Passwords do not match"
+}
