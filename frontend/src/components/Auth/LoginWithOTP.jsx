@@ -3,60 +3,75 @@ import logo from "../../assets/app_logo.png";
 import { ArrowLeftCircle, Mail, KeyRound, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import i18n from "i18next";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { auth } from "../../firebase";
 
 export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }) {
   const [step, setStep] = useState(1);
-
   const [contact, setContact] = useState("");
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
-
+  const [confirmationResult, setConfirmationResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   const { t } = useTranslation("otp");
 
-  const handleSendOtp = () => {
-    if (!contact) return setError(t("errContact"));
-
-    setError("");
-    setLoading(true);
-
-    setTimeout(() => {
-      const fakeOtp = "1234";
-      console.log("OTP sent:", fakeOtp);
-      setGeneratedOtp(fakeOtp);
-      setLoading(false);
-      setStep(2);
-    }, 1000);
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        auth,
+        "recaptcha-container",
+        { size: "invisible" }
+      );
+    }
+    return window.recaptchaVerifier;
   };
 
-  const handleVerifyOtp = () => {
-    if (otp !== generatedOtp) {
-      return setError(t("errOtp"));
-    }
+  const handleSendOtp = async () => {
+    if (!contact) return setError("Enter phone number with country code, e.g. +919876543210");
 
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      console.log("OTP verified");
+    try {
+      const appVerifier = setupRecaptcha();
+      const result = await signInWithPhoneNumber(auth, contact, appVerifier);
+
+      setConfirmationResult(result);
+      setStep(2);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Failed to send OTP");
+    } finally {
       setLoading(false);
-      setShowOTP(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) return setError("Enter OTP");
+
+    setError("");
+    setLoading(true);
+
+    try {
+      await confirmationResult.confirm(otp);
+
       setIsLoggedIn(true);
+      setShowOTP(false);
       setShowLogin(false);
-    }, 1000);
+    } catch (err) {
+      console.error(err);
+      setError("Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="login-screen">
       <div className="login-card">
-        <div
-            className="back-btn chat-back-btn"
-            onClick={() => setShowOTP(false)}
-          >
-            <ArrowLeftCircle />
+        <div className="back-btn chat-back-btn" onClick={() => setShowOTP(false)}>
+          <ArrowLeftCircle />
         </div>
 
         <div className="brand-badge">
@@ -69,21 +84,23 @@ export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }
           {step === 2 && t("step2")}
         </p>
 
+        <div id="recaptcha-container"></div>
+
         {step === 1 && (
           <>
-            <label>{t("contactLabe;")}</label>
+            <label>Phone Number</label>
             <div className="input-group">
               <Mail className="input-icon" size={18} />
               <input
                 type="text"
-                placeholder={t("contactPlaceholder")}
+                placeholder="+919876543210"
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
               />
             </div>
 
-            <button className="login-primary" onClick={handleSendOtp}>
-              {loading ? t("sending"): t("getOtp")} <ArrowRight size={18} />
+            <button className="login-primary" onClick={handleSendOtp} disabled={loading}>
+              {loading ? "Sending..." : "Get OTP"} <ArrowRight size={18} />
             </button>
           </>
         )}
@@ -101,8 +118,8 @@ export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }
               />
             </div>
 
-            <button className="login-primary" onClick={handleVerifyOtp}>
-              {loading ? t("verifying;"): t("verifyOtp")} <ArrowRight size={18} />
+            <button className="login-primary" onClick={handleVerifyOtp} disabled={loading}>
+              {loading ? "Verifying..." : t("verifyOtp")} <ArrowRight size={18} />
             </button>
           </>
         )}
@@ -117,7 +134,6 @@ export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }
           {t("backToLogin")}{" "}
           <span onClick={() => setShowOTP(false)}>{t("signIn")}</span>
         </p>
-
       </div>
     </div>
   );

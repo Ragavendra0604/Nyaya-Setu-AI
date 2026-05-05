@@ -1,3 +1,6 @@
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../firebase";
 import "./Login.css";
 import logo from "../../assets/app_logo.png";
 
@@ -18,11 +21,44 @@ export default function Signup({ setShowSignUp }) {
 
   const { t } = useTranslation("auth");
 
-  const handleSignUp = () => {
-    // Implement sign-up logic here (e.g., form validation, API call)
-    console.log("Sign Up Details:", { fullName, email, password, confirmPassword });
-    setShowSignUp(false); // Close the sign-up form after handling sign-up
+  const handleSignUp = async () => {
+  if (!fullName || !email || !password || !confirmPassword) {
+    alert("Please fill all fields");
+    return;
   }
+
+  if (password !== confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    await updateProfile(userCredential.user, {
+      displayName: fullName,
+    });
+
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      uid: userCredential.user.uid,
+      name: fullName,
+      email: email,
+      phone: "",
+      language: localStorage.getItem("lang") || "en",
+      mode: "simple",
+      theme: "dark",
+    });
+
+    alert("Account created successfully");
+    setShowSignUp(false);
+  } catch (error) {
+    alert(error.message);
+  }
+};
 
   return (
     <div className="login-screen">
