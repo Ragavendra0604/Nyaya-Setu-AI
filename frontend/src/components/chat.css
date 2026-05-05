@@ -454,3 +454,43 @@
     margin-left: 0 !important;
   }
 }
+/* added this for new update */
+.feedback-stars {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.feedback-label {
+  font-size: 12px;
+  color: #047857;
+  margin-right: 4px;
+}
+
+.feedback-star {
+  font-size: 20px;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+/* ⭐ controlled ONLY by React */
+.feedback-star.active {
+  color: #facc15;
+}
+
+/* hover = ONLY scale, NOT color */
+.feedback-star:hover {
+  transform: scale(1.15);
+}
+
+/* after rating */
+.feedback-star.disabled {
+  pointer-events: none;
+  cursor: default;
+}
+
+.feedback-star.disabled:hover {
+  transform: none;
+}

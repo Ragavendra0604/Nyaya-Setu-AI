@@ -1,3 +1,5 @@
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebase";
 import "./Login.css";
 import logo from "../../assets/app_logo.png";
 import { KeyRound, ArrowLeftCircle, UserRoundIcon, LockKeyhole, ArrowRight } from 'lucide-react';
@@ -19,11 +21,20 @@ export default function Login({ setShowLogin, setIsLoggedIn }) {
 
   const { t } = useTranslation("login");
 
-  const handleLogin = () => {
-    console.log("Login:", { email, password });
+  const handleLogin = async () => {
+  if (!email || !password) {
+    alert("Please enter email and password");
+    return;
+  }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
     setIsLoggedIn(true);
-    setShowLogin(false); 
-  };
+    setShowLogin(false);
+  } catch (error) {
+    alert(error.message);
+  }
+};
 
   const handleOtpLogin = () => {
     setShowOTP(true);
