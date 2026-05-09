@@ -109,22 +109,3 @@ npm run dev
 ```
 
 ---
-
-## 📜 Legal Guardrails
-NyayaSetu is built with safety at its core:
-1. **Age Verification:** Explicitly highlights marriage and consent ages.
-2. **Statute Verification:** Every cited section is cross-referenced with the latest Indian Statutes.
-3. **Mandatory Disclaimers:** Clarifies that AI guidance is for information only and does not replace a licensed advocate.
-
----
-
-## 🤝 Contributing
-We welcome contributions to help make justice more accessible. Please feel free to submit Pull Requests or open issues for feature requests.
-
----
-
-## 📄 License
-This project is licensed under the ISC License.
-
----
-*Created with ❤️ for Niral Thiruvizha - Nyaya Setu Team.*
