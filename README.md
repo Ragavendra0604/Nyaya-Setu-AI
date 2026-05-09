@@ -1,196 +1,130 @@
-# NyayaSetu AI - Indian Legal Assistant
+# ⚖️ NyayaSetu AI: Bridging the Gap to Justice
 
-<p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
-  <img src="https://img.shields.io/badge/React-19.2.5-blue.svg" alt="React">
-  <img src="https://img.shields.io/badge/Flask-3.0-orange.svg" alt="Flask">
-  <img src="https://img.shields.io/badge/Node.js-16+-green.svg" alt="Node.js">
-</p>
+![NyayaSetu Banner](nyayasetu_banner_1778368529249.png)
 
-NyayaSetu AI is an AI-powered legal guidance platform designed to provide simple, step-by-step legal information to Indian citizens. The name "NyayaSetu" (न्यायसेतु) means "Bridge to Justice" in Sanskrit, reflecting our mission to make legal knowledge accessible to everyone.
+## 🌐 Overview
+**NyayaSetu** (Sanskrit for *Legal Bridge*) is a state-of-the-art multimodal AI platform designed to democratize legal access for Indian citizens. By simplifying complex legal jargon and providing actionable guidance based on both the historic **IPC/CrPC** and the newly implemented **BNS/BNSS/BSA** frameworks, NyayaSetu empowers users to understand their rights and the legal procedures relevant to their situation.
 
-## 🌟 Features
+---
 
-- **AI-Powered Guidance**: Specialized knowledge in FIR procedures, Legal Aid, and Citizen Rights
-- **Multilingual Support**: English, Hindi (हिन्दी), and Tamil (தமிழ்)
-- **Modern UI**: Glassmorphic design with smooth animations using Framer Motion
-- **Secure Architecture**: Decoupled Python AI service with a Node.js API Gateway
-- **Chat History**: Persistent conversation history using localStorage
+## 🚀 Key Features
 
-## 🏗️ Architecture
+### 🎙️ Multimodal Input System
+Interact with the law using whatever medium is most convenient:
+- **Voice (STT):** Real-time transcription using `faster-whisper` for natural language queries.
+- **Visual OCR:** Upload photos of legal notices or handwritten documents for instant analysis.
+- **Document Parsing:** Upload PDFs or DOCX files for high-fidelity context extraction.
+- **Text:** Traditional chat-based interaction with Markdown support.
 
+### 🧠 Advanced AI Reasoning
+- **Dual-Law Awareness:** Seamlessly transitions between old Indian laws and the new Bharatiya Nyaya Sanhita (2023) codes.
+- **High-Fidelity Context:** Uses Vision models to analyze complex document layouts and visual evidence.
+- **Automated Evaluation:** An integrated self-correction loop that scores AI responses for legal accuracy and structural compliance.
+
+### 🛠️ Transparency & Accessibility
+- **Pipeline Visualization:** Watch the AI's "train of thought" as it transcribes, extracts context, and applies legal reasoning.
+- **Multi-language Support:** Fully internationalized UI (i18n) supporting English and regional Indian languages.
+- **Simplified Guidance:** Choose between "Simple" mode (5 actionable points) or "Detailed" mode (Structured legal analysis).
+
+---
+
+## 📂 Project Structure & Architecture
+
+![Architecture Diagram](nyayasetu_architecture_visual_1778368681672.png)
+
+NyayaSetu follows a decoupled **three-tier architecture** designed for scalability and real-time processing:
+
+```mermaid
+graph LR
+    A[Frontend: React/Vite] --- B[Backend: Node.js/Express]
+    B --- C[AI Engine: Flask/Python]
+    B --- D[(Firebase Storage/Auth)]
+    C --- E[Whisper STT]
+    C --- F[LLM / Vision]
 ```
-┌─────────────────┐     ┌─────────────────┐      ┌─────────────────┐
-│   React UI      │────▶│  Node.js API    │────▶│  Python AI      │
-│  (Port 3000)    │     │  Gateway        │      │  Service        │
-│                 │     │  (Port 5000)    │      │  (Port 5001)    │
-└─────────────────┘     └─────────────────┘      └─────────────────┘
-```
 
-| Component | Technology | Port | Description |
-|-----------|------------|------|-------------|
-| Frontend | React + Framer Motion | 3000 | User interface |
-| Gateway | Node.js Express | 5000 | API routing & proxy |
-| AI Service | Flask + Python | 5001 | LLM integration |
+---
 
-## 📋 Prerequisites
+## 🔄 Detailed Workflow
 
-- **Python**: 3.8 or higher
-- **Node.js**: 16 or higher
-- **Package Manager**: npm (comes with Node.js)
-- **API Key**: Gemini API Key or OpenRouter API Key
+![Workflow Diagram](nyayasetu_workflow_diagram_1778368665396.png)
 
-## 🚀 Quick Start
+The NyayaSetu pipeline is designed to be transparent and efficient. Here is how a user query is processed:
 
-### Option 1: Using the Launcher Script (Windows)
+1.  **Ingestion**: User provides input via voice (WebM/WAV), image (JPEG/PNG), PDF, or text.
+2.  **Preprocessing**: 
+    - **Audio**: FFmpeg normalizes audio to 16kHz mono for optimal transcription.
+    - **Images**: Tesseract.js/Vision models extract text from visual evidence.
+    - **Documents**: Mammoth/PDF-parse extract structured text from legal files.
+3.  **AI Orchestration**: 
+    - **STT**: `faster-whisper` transcribes audio with multilingual support.
+    - **Contextualization**: The AI engine merges the query with extracted document context.
+    - **Legal Reasoning**: The system applies the selected mode (Simple/Detailed) and citations (IPC/BNS).
+4.  **Verification**: The response is optionally sent through an **Evaluation Loop** to ensure legal accuracy and structural compliance.
+5.  **Delivery**: The final advice is rendered in the frontend with a step-by-step pipeline visualization.
 
-Simply run the batch file to start all services:
+---
 
+## 🏗️ Technical Architecture Details
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, Tailwind CSS, Lucide Icons, i18next, Firebase |
+| **Backend** | Node.js, Express, Multer, Mammoth, PDF-parse, Tesseract.js |
+| **AI Engine** | Python 3.10+, Flask, Gemini Pro/Flash, Faster-Whisper, OpenRouter |
+| **Database/Auth** | Firebase Authentication & Cloud Storage |
+
+---
+
+## ⚙️ Installation & Setup
+
+### 1. Prerequisites
+- Node.js (v18+)
+- Python (v3.10+)
+- Firebase Project Credentials
+
+### 2. AI Engine (Python)
 ```bash
-start_all.bat
-```
-
-This will open three separate terminal windows:
-- Frontend: http://localhost:3000
-- Gateway: http://localhost:5000
-- AI Service: http://localhost:5001
-
-### Option 2: Manual Setup
-
-#### 1. Clone the Repository
-
-```bash
-git clone <repository-url>
-cd Nyaya_Setu
-```
-
-#### 2. Configure Environment Variables
-
-Create a `.env` file in the `ai` directory:
-
-```env
-# Choose one or both API providers
-GEMINI_API_KEY=your_gemini_api_key_here
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-```
-
-> **Note**: Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey) or OpenRouter key from [OpenRouter](https://openrouter.ai/keys).
-
-#### 3. Start the AI Service (Python/Flask)
-
-```bash
-cd ai
+cd Nyaya-Setu-AI/ai
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
 
-#### 4. Start the API Gateway (Node.js)
-
+### 3. Backend (Node.js)
 ```bash
-cd backend
+cd Nyaya-Setu-AI/backend
 npm install
 npm start
 ```
 
-#### 5. Start the Frontend (React)
-
+### 4. Frontend (React)
 ```bash
-cd frontend
+cd Nyaya-Setu-AI/frontend
 npm install
-npm start
+npm run dev
 ```
-
-## 📁 Project Structure
-
-```
-Nyaya_Setu/
-├── README.md              # This file
-├── start_all.bat          # Windows launcher script
-├── ai/                    # Python AI Service
-│   ├── app.py            # Flask application
-│   └── requirements.txt  # Python dependencies
-├── backend/              # Node.js API Gateway
-│   ├── package.json      # Node dependencies
-│   └── server.js         # Express server
-└── frontend/             # React Frontend
-    ├── package.json      # React dependencies
-    ├── public/           # Static assets
-    └── src/
-        ├── App.js        # Main React component
-        ├── App.css       # Styling
-        └── index.js      # Entry point
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GEMINI_API_KEY` | Yes* | Google Gemini API key |
-| `OPENROUTER_API_KEY` | Yes* | OpenRouter API key |
-| `PYTHON_API_URL` | No | Python service URL (default: http://localhost:5001) |
-| `PORT` | No | Gateway port (default: 5000) |
-
-*At least one API key is required.
-
-### Supported Languages
-
-| Language | Code | Script |
-|----------|------|--------|
-| English | English | Latin |
-| Hindi | Hindi | Devanagari (हिन्दी) |
-| Tamil | Tamil | Tamil (தமிழ்) |
-
-## 💻 Usage
-
-1. Open http://localhost:3000 in your browser
-2. Select your preferred language from the dropdown
-3. Choose the response mode (Simple or Detailed)
-4. Type your legal query in the chat box
-5. Press Enter or click the send button
-
-### Example Queries
-
-- "How do I file an FIR?"
-- "What are my rights when arrested?"
-- "How do I get free legal aid?"
-- "What is Zero FIR?"
-
-## 📦 Dependencies
-
-### Python (ai/)
-
-- Flask
-- Flask-CORS
-- openai
-- google-generativeai
-- python-dotenv
-
-### Node.js (backend/)
-
-- express
-- axios
-- cors
-- dotenv
-
-### React (frontend/)
-
-- react & react-dom
-- framer-motion
-- lucide-react
-- react-markdown
-- remark-gfm
-- axios
-
-## ⚠️ Disclaimer
-
-This application is a **prototype for informational purposes only** and does not constitute legal advice. For specific legal matters, please consult a qualified advocate or legal professional.
-
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 
-<p align="center">Built with ❤️ for accessible justice in India</p>
+## 📜 Legal Guardrails
+NyayaSetu is built with safety at its core:
+1. **Age Verification:** Explicitly highlights marriage and consent ages.
+2. **Statute Verification:** Every cited section is cross-referenced with the latest Indian Statutes.
+3. **Mandatory Disclaimers:** Clarifies that AI guidance is for information only and does not replace a licensed advocate.
+
+---
+
+## 🤝 Contributing
+We welcome contributions to help make justice more accessible. Please feel free to submit Pull Requests or open issues for feature requests.
+
+---
+
+## 📄 License
+This project is licensed under the ISC License.
+
+---
+*Created with ❤️ for Niral Thiruvizha - Nyaya Setu Team.*

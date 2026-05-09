@@ -1,5 +1,6 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
+import { toast } from "react-hot-toast";
 import "./Login.css";
 import logo from "../../assets/app_logo.png";
 import { KeyRound, ArrowLeftCircle, UserRoundIcon, LockKeyhole, ArrowRight } from 'lucide-react';
@@ -23,16 +24,17 @@ export default function Login({ setShowLogin, setIsLoggedIn }) {
 
   const handleLogin = async () => {
   if (!email || !password) {
-    alert("Please enter email and password");
+    toast.error("Please enter email and password");
     return;
   }
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
+    toast.success("Login successful");
     setIsLoggedIn(true);
     setShowLogin(false);
   } catch (error) {
-    alert(error.message);
+    toast.error(error.message);
   }
 };
 

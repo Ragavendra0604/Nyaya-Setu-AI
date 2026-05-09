@@ -1,0 +1,81 @@
+from flask import Blueprint, request, jsonify
+from controllers.ai_controller import AIController
+
+from services.stt_service import SttService
+
+ai_bp = Blueprint('ai', __name__)
+stt_service = SttService()
+
+@ai_bp.route("/", methods=["GET"])
+def home():
+    return jsonify({"message": "NyayaSetu AI Engine Running"}), 200
+
+@ai_bp.route("/ask", methods=["POST"])
+def ask():
+    try:
+        data = request.get_json()
+        query = data.get("query", "")
+        language = data.get("language", "English")
+        mode = data.get("mode", "simple")
+        image_data = data.get("image_data")
+        pdf_data = data.get("pdf_data")
+        audio_data = data.get("audio_data")
+
+        # 1. If audio is provided, transcribe it first
+        transcription_info = None
+        external_steps = []
+        if audio_data:
+            external_steps.append("🎙️ Transcribing voice message...")
+            print("🎙️ Transcribing audio input...")
+            stt_result = stt_service.transcribe(audio_data)
+            query = f"{query}\n\n[TRANSCRIPT]: {stt_result['text']}" if query else stt_result['text']
+            transcription_info = stt_result
+
+        if not query and not image_data and not pdf_data:
+            return jsonify({"error": "Empty request: Neither query, image, pdf, nor audio provided."}), 400
+
+        result = AIController.get_legal_guidance(query, language, mode, image_data, pdf_data)
+        
+        # Merge steps
+        result["pipeline_steps"] = external_steps + result.get("pipeline_steps", [])
+        
+        if transcription_info:
+            result["transcription"] = transcription_info
+            
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"Ask Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@ai_bp.route("/transcribe", methods=["POST"])
+def transcribe_standalone():
+    try:
+        data = request.get_json()
+        audio_data = data.get("audio_data")
+        language = data.get("language") # Optional hint
+        
+        if not audio_data:
+            return jsonify({"error": "audio_data (base64) is required"}), 400
+            
+        result = stt_service.transcribe(audio_data, language=language)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@ai_bp.route("/evaluate", methods=["POST"])
+def evaluate():
+    try:
+        data = request.get_json()
+        user_query = data.get("user_query")
+        mode = data.get("mode", "simple")
+        ai_response = data.get("ai_response")
+
+        if not user_query or not ai_response:
+            return jsonify({"error": "user_query and ai_response are required"}), 400
+
+        result = AIController.evaluate_response(user_query, mode, ai_response)
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

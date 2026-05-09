@@ -1,0 +1,18 @@
+{
+  "appName": "NyayaSetu",
+  "newChat": "New Chat",
+  "logout": "Logout",
+  "simple": "Simple",
+  "detailed": "Detailed",
+  "placeholder": "Ask about Indian law...",
+  "rename": "Rename",
+  "clear": "Clear",
+  "delete": "Delete",
+  "feedback": "Feedback",
+  "demoOptions": [
+    "What are my rights during a traffic stop?",
+    "How do I file an FIR?",
+    "What is the process for a rental agreement?",
+    "How to get free legal aid in India?"
+  ]
+}

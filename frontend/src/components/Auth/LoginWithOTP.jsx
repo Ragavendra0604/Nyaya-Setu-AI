@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { auth } from "../../firebase";
+import { syncProfile } from "../../services/api";
+import { toast } from "react-hot-toast";
 
 export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }) {
   const [step, setStep] = useState(1);
@@ -54,14 +56,25 @@ export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }
     setLoading(true);
 
     try {
-      await confirmationResult.confirm(otp);
+      const result = await confirmationResult.confirm(otp);
+
+      // Sync profile (creates if not exists)
+      await syncProfile({
+        uid: result.user.uid,
+        email: result.user.email || `${contact}@phone.auth`,
+        displayName: result.user.displayName || "User",
+        phone: contact,
+        language: localStorage.getItem("lang") || "en",
+      });
 
       setIsLoggedIn(true);
       setShowOTP(false);
       setShowLogin(false);
+      toast.success("Login successful");
     } catch (err) {
       console.error(err);
       setError("Invalid OTP");
+      toast.error("Invalid OTP");
     } finally {
       setLoading(false);
     }

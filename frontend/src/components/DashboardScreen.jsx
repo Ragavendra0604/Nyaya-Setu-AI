@@ -3,9 +3,9 @@ import engBanner from '../assets/eng_banner.png';
 import hindiBanner from '../assets/hindi_banner.png';
 import tamBanner from '../assets/tam_banner.png';
 import logo from '../assets/app_logo.png';
-import { 
-  Scale, Languages, Sparkles, HelpCircle, MessageSquare, 
-  Mic, Lightbulb, ClipboardList, Users, Handshake 
+import {
+  Scale, Languages, Sparkles, HelpCircle, MessageSquare,
+  Mic, Lightbulb, ClipboardList, Users, Handshake, User
 } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
@@ -23,15 +23,17 @@ function DashboardScreen({
   isLoggedIn,
   setShowLogin,
   setShowDashboard,
-  setIsDemo
+  setIsDemo,
+  setShowProfile
 }) {
   const { t } = useTranslation("dashboard");
 
   const selectedBanner = bannerByLanguage[selectedLanguage] ?? engBanner;
 
   const handleClick = (type) => {
-    if(type === 'primary') {
-      if(isLoggedIn) {
+    if (type === 'primary') {
+      if (isLoggedIn) {
+        setIsDemo(false);
         setShowDashboard(false);
         setShowChat(true);
       } else {
@@ -39,8 +41,8 @@ function DashboardScreen({
         setShowLogin(true);
       }
     } else {
-        setShowDashboard(false);
-        setShowChat(true);
+      setShowDashboard(false);
+      setShowChat(true);
     }
   }
 
@@ -91,7 +93,6 @@ function DashboardScreen({
           <div className="dashboard-brand-name">
             <h2>NyayaSetu AI</h2>
           </div>
-
           <div className="dashboard-brand-actions">
             <span
               className="icon"
@@ -102,10 +103,20 @@ function DashboardScreen({
             >
               <Languages size={19} />
             </span>
+
+            {isLoggedIn && (
+              <span
+                className="icon"
+                onClick={() => setShowProfile(true)}
+                title="Profile"
+              >
+                <User size={19} />
+              </span>
+            )}
           </div>
         </div>
       </aside>
-      
+
       <section className="dashboard-content">
         <div className="hero-card">
           <div className="hero-split">
@@ -126,18 +137,18 @@ function DashboardScreen({
                   <MessageSquare size={19} /> {t("primaryAction")}
                 </button>
 
-                {!isLoggedIn ? 
-                (
-                  <button
-                    className="secondary"
-                    onClick={() => {
-                      handleClick('secondary');
-                      setIsDemo(true);
-                    }}
-                  >
-                    <Sparkles size={19} /> {t("secondaryAction")}
-                  </button>
-                ) : null
+                {!isLoggedIn ?
+                  (
+                    <button
+                      className="secondary"
+                      onClick={() => {
+                        handleClick('secondary');
+                        setIsDemo(true);
+                      }}
+                    >
+                      <Sparkles size={19} /> {t("secondaryAction")}
+                    </button>
+                  ) : null
                 }
               </div>
             </div>
@@ -162,7 +173,7 @@ function DashboardScreen({
                 <p>{card.body}</p>
               </article>
             ))}
-        </div>
+          </div>
         </section>
 
         <section className="practical-section-card">
@@ -189,7 +200,7 @@ function DashboardScreen({
           </div>
         </section>
       </section>
-    </main>
+    </main >
   );
 }
 

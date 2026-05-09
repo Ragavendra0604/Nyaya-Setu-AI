@@ -1,6 +1,7 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../../firebase";
+import { auth } from "../../firebase";
+import { syncProfile } from "../../services/api";
+import { toast } from "react-hot-toast";
 import "./Login.css";
 import logo from "../../assets/app_logo.png";
 
@@ -23,12 +24,12 @@ export default function Signup({ setShowSignUp }) {
 
   const handleSignUp = async () => {
   if (!fullName || !email || !password || !confirmPassword) {
-    alert("Please fill all fields");
+    toast.error("Please fill all fields");
     return;
   }
 
   if (password !== confirmPassword) {
-    alert("Passwords do not match");
+    toast.error("Passwords do not match");
     return;
   }
 
@@ -43,20 +44,18 @@ export default function Signup({ setShowSignUp }) {
       displayName: fullName,
     });
 
-    await setDoc(doc(db, "users", userCredential.user.uid), {
+    await syncProfile({
       uid: userCredential.user.uid,
-      name: fullName,
       email: email,
-      phone: "",
+      displayName: fullName,
       language: localStorage.getItem("lang") || "en",
       mode: "simple",
-      theme: "dark",
     });
 
-    alert("Account created successfully");
+    toast.success("Account created successfully");
     setShowSignUp(false);
   } catch (error) {
-    alert(error.message);
+    toast.error(error.message);
   }
 };
 
