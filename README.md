@@ -1,6 +1,6 @@
 # ⚖️ NyayaSetu AI: Bridging the Gap to Justice
 
-![NyayaSetu Banner](<img width="1600" height="1281" alt="image" src="https://github.com/user-attachments/assets/84ed2815-2973-4292-a526-d5f1b017146f" />)
+![NyayaSetu Banner](<img width="1600" height="1281" alt="image" src="https://github.com/user-attachments/assets/35a74962-83ca-4797-96f8-23988d647773" />)
 
 > **"Bridge of Justice"** - A comprehensive multilingual legal assistance platform powered by AI
 
