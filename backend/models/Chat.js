@@ -2,13 +2,13 @@ const { db, admin } = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
 
 class ChatModel {
-  static async createChat(userId, title = 'New Chat') {
+  static async createChat(userId, title = 'New Chat', language = 'en') {
     try {
       const chatData = {
         userId,
         title,
         messages: [],
-        language: 'en',
+        language: language,
         mode: 'simple',
         createdAt: new Date(),
         updatedAt: new Date(),

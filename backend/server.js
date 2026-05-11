@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chats');
 const translationRoutes = require('./routes/translations');
 const legalCategoryRoutes = require('./routes/legalCategories');
+const otpRoutes = require('./routes/otp');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,6 +20,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/translations', translationRoutes);
 app.use('/api/legal-categories', legalCategoryRoutes);
+app.use('/api/otp', otpRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

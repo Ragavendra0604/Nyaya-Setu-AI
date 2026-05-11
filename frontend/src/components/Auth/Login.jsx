@@ -2,11 +2,11 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
 import { toast } from "react-hot-toast";
 import "./Login.css";
-import logo from "../../assets/app_logo.png";
+import logo from "../../assets/app_logo.jpeg";
 import { KeyRound, ArrowLeftCircle, UserRoundIcon, LockKeyhole, ArrowRight } from 'lucide-react';
 import { useState } from "react";
 import Signup from "./SignUp";
-import Forgot from "./Forgot"; 
+import Forgot from "./Forgot";
 import LoginWithOTP from "./LoginWithOTP";
 
 import i18next from "i18next";
@@ -23,20 +23,20 @@ export default function Login({ setShowLogin, setIsLoggedIn }) {
   const { t } = useTranslation("login");
 
   const handleLogin = async () => {
-  if (!email || !password) {
-    toast.error("Please enter email and password");
-    return;
-  }
+    if (!email || !password) {
+      toast.error("Please enter email and password");
+      return;
+    }
 
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    toast.success("Login successful");
-    setIsLoggedIn(true);
-    setShowLogin(false);
-  } catch (error) {
-    toast.error(error.message);
-  }
-};
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success("Login successful");
+      setIsLoggedIn(true);
+      setShowLogin(false);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   const handleOtpLogin = () => {
     setShowOTP(true);
@@ -72,10 +72,10 @@ export default function Login({ setShowLogin, setIsLoggedIn }) {
     <div className="login-screen">
       <div className="login-card">
         <div
-            className="back-btn"
-            onClick={() => setShowLogin(false)}
-          >
-            <ArrowLeftCircle />
+          className="back-btn"
+          onClick={() => setShowLogin(false)}
+        >
+          <ArrowLeftCircle />
         </div>
         <div className="brand-badge">
           <img src={logo} alt="NyayaSetu Logo" />

@@ -6,13 +6,13 @@ const fs = require('fs');
 class ChatController {
   static async createChat(req, res) {
     try {
-      const { userId, title } = req.body;
+      const { userId, title, language } = req.body;
 
       if (!userId) {
         return res.status(400).json({ error: 'User ID is required' });
       }
 
-      const chat = await ChatModel.createChat(userId, title || 'New Chat');
+      const chat = await ChatModel.createChat(userId, title || 'New Chat', language || 'en');
 
       res.status(201).json({
         ok: true,
@@ -102,6 +102,20 @@ class ChatController {
       let imageData = null;
       let pdfData = null;
       let audioData = null;
+      let effectiveLanguage = language;
+
+      // Fetch language from DB if not provided and it's not a demo
+      if (!effectiveLanguage && chatId !== "demo-chat") {
+        try {
+          const chat = await ChatModel.getChatById(chatId);
+          if (chat && chat.language) {
+            effectiveLanguage = chat.language;
+            console.log(`Fetched language '${effectiveLanguage}' from database for chat ${chatId}`);
+          }
+        } catch (dbErr) {
+          console.warn('Could not fetch chat language from DB, defaulting to request or English');
+        }
+      }
 
       if (req.file) {
         try {
@@ -113,19 +127,22 @@ class ChatController {
             enrichedQuery = query || "Please analyze this image for legal context.";
             const extractedText = await FileProcessor.extractText(req.file);
             enrichedQuery += `\n\n[OCR DATA]:\n${extractedText}`;
-          } else if (mimeType === 'application/pdf') {
+          }
+          else if (mimeType === 'application/pdf') {
             pdfData = fs.readFileSync(req.file.path).toString('base64');
             enrichedQuery = query || "Please analyze this document.";
             let extractedText = await FileProcessor.extractText(req.file);
-            if (extractedText.length > 5000) extractedText = extractedText.substring(0, 5000) + "...";
+            if (extractedText.length > 30000) extractedText = extractedText.substring(0, 30000) + "... [Content Truncated]";
             enrichedQuery += `\n\n[TEXT CONTENT]:\n${extractedText}`;
-          } else if (mimeType.startsWith('audio/') || mimeType === 'video/webm' || mimeType === 'application/ogg') {
+          }
+          else if (mimeType.startsWith('audio/') || mimeType === 'video/webm' || mimeType === 'application/ogg') {
             audioData = fs.readFileSync(req.file.path).toString('base64');
             enrichedQuery = query || "Please transcribe and analyze this voice message.";
-          } else {
+          }
+          else {
             let extractedText = await FileProcessor.extractText(req.file);
-            if (extractedText.length > 10000) {
-              extractedText = extractedText.substring(0, 10000) + "... [Content Truncated]";
+            if (extractedText.length > 30000) {
+              extractedText = extractedText.substring(0, 30000) + "... [Content Truncated]";
             }
             enrichedQuery = `${query || "Please analyze this document."}\n\n[ATTACHED CONTENT]:\n${extractedText}`;
           }
@@ -176,7 +193,7 @@ class ChatController {
         const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5001';
 
         const langMap = { 'en': 'English', 'hi': 'Hindi', 'ta': 'Tamil' };
-        const fullLanguage = langMap[language] || language || 'English';
+        const fullLanguage = langMap[effectiveLanguage] || effectiveLanguage || 'English';
 
         const pythonPayload = {
           query: enrichedQuery,
@@ -311,6 +328,25 @@ class ChatController {
       });
     } catch (error) {
       console.error('Rate message error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async textToSpeech(req, res) {
+    try {
+      const { text, language } = req.body;
+      const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5001';
+
+      const response = await fetch(`${PYTHON_API_URL}/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, language }),
+      });
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error('TTS error:', error);
       res.status(500).json({ error: error.message });
     }
   }

@@ -44,12 +44,31 @@ export async function verifyToken(token) {
   return response.json();
 }
 
+// ============ OTP ENDPOINTS (RESEND) ============
+export async function sendOtp(email) {
+  const response = await fetch(`${API_URL}/otp/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return response.json();
+}
+
+export async function verifyOtp(email, otp) {
+  const response = await fetch(`${API_URL}/otp/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, otp }),
+  });
+  return response.json();
+}
+
 // ============ CHAT ENDPOINTS ============
-export async function createChat(userId, title = 'New Chat') {
+export async function createChat(userId, title = 'New Chat', language = 'en') {
   const response = await fetch(`${API_URL}/chats`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, title }),
+    body: JSON.stringify({ userId, title, language }),
   });
   return response.json();
 }
@@ -188,9 +207,13 @@ export async function transcribeVoiceInput(blob) {
   return { ok: true, transcript: 'Voice transcription placeholder', sourceSize: blob?.size ?? 0 };
 }
 
-export async function synthesizeVoiceResponse(text) {
-  console.warn('synthesizeVoiceResponse placeholder. Implement with text-to-speech service');
-  return { ok: true, audioUrl: '', message: 'Text-to-speech placeholder' };
+export async function synthesizeVoiceResponse(text, language = 'English') {
+  const response = await fetch(`${API_URL}/chats/tts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, language }),
+  });
+  return response.json();
 }
 
 export async function updateUserSettings(settings) {

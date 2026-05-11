@@ -1,5 +1,5 @@
 import "./Login.css";
-import logo from "../../assets/app_logo.png";
+import logo from "../../assets/app_logo.jpeg";
 import { ArrowLeftCircle, Mail, LockKeyhole, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

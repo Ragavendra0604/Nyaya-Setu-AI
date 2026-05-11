@@ -3,7 +3,7 @@ import { auth } from "../../firebase";
 import { syncProfile } from "../../services/api";
 import { toast } from "react-hot-toast";
 import "./Login.css";
-import logo from "../../assets/app_logo.png";
+import logo from "../../assets/app_logo.jpeg";
 
 import { 
   ArrowLeftCircle, UserRound, Mail, 

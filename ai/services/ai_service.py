@@ -7,7 +7,6 @@ class AIService:
     @staticmethod
     def call_ai(messages, model_preference=None):
         """Try Gemini first, then OpenRouter fallbacks."""
-        # Process media and prompts using the dedicated MediaService
         gemini_contents, full_text_prompt = MediaService.process_media(messages)
 
         # 1. Gemini

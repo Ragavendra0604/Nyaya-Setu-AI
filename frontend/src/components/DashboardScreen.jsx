@@ -1,8 +1,8 @@
 import './DashboardScreen.css';
-import engBanner from '../assets/eng_banner.png';
-import hindiBanner from '../assets/hindi_banner.png';
-import tamBanner from '../assets/tam_banner.png';
-import logo from '../assets/app_logo.png';
+import engBanner from '../assets/eng_banner.jpeg';
+import hindiBanner from '../assets/hindi_banner.jpeg';
+import tamBanner from '../assets/tam_banner.jpeg';
+import logo from '../assets/app_logo.jpeg';
 import {
   Scale, Languages, Sparkles, HelpCircle, MessageSquare,
   Mic, Lightbulb, ClipboardList, Users, Handshake, User

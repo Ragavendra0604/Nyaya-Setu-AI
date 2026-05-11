@@ -18,6 +18,8 @@ import { toast } from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Image, FileText, Camera } from "lucide-react";
+import chatBanner from "../assets/chat_banner.jpeg";
+import mobileChatBanner from "../assets/mobile_chat_banner.jpeg";
 
 export default function ChatPage({
   selectedLanguage,
@@ -66,9 +68,10 @@ export default function ChatPage({
   const recorderRef = useRef(null);
   const recordingTimerRef = useRef(null);
   const [speakingId, setSpeakingId] = useState(null);
-  const synthRef = useRef(window.speechSynthesis);
+  const audioRef = useRef(null);
 
   const lang = selectedLanguage || localStorage.getItem("lang") || "en";
+  const isMobile = window.innerWidth <= 768;
 
   useEffect(() => {
     activeChatIndexRef.current = activeChatIndex;
@@ -120,18 +123,15 @@ export default function ChatPage({
             }),
           }));
 
-          setChats(prev => {
-            // Try to keep current chat active if it's still there
-            const currentChatId = prev[activeChatIndex]?.chatId;
-            if (currentChatId) {
-              const newIndex = transformed.findIndex(c => c.chatId === currentChatId);
-              if (newIndex !== -1) setActiveChatIndex(newIndex);
-            }
-            return transformed;
-          });
+          // Always prepend a "New Chat" and make it active on initial load
+          const newChatEntry = { title: t("newChat"), messages: [], chatId: null };
+          setChats([newChatEntry, ...transformed]);
+          setActiveChatIndex(0);
+          activeChatIndexRef.current = 0;
         } else {
           setChats([{ title: t("newChat"), messages: [], chatId: null }]);
           setActiveChatIndex(0);
+          activeChatIndexRef.current = 0;
         }
       } catch (error) {
         console.error("Error fetching chats:", error);
@@ -155,40 +155,56 @@ export default function ChatPage({
     });
   };
 
-  const handleSpeak = (text, id) => {
+  const handleSpeak = async (text, id) => {
     if (speakingId === id) {
-      synthRef.current.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       setSpeakingId(null);
       return;
     }
 
-    // Cancel any previous speech
-    synthRef.current.cancel();
-
-    // Clean text for speech (remove markdown symbols)
-    const cleanText = text.replace(/[#*`_~]/g, '').substring(0, 500);
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-
-    // Map languages to speech codes
-    const voiceMap = {
-      'hi': 'hi-IN',
-      'ta': 'ta-IN',
-      'en': 'en-US'
-    };
-
-    utterance.lang = voiceMap[lang] || 'en-US';
-
-    utterance.onend = () => setSpeakingId(null);
-    utterance.onerror = () => setSpeakingId(null);
+    // Stop any current audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
 
     setSpeakingId(id);
-    synthRef.current.speak(utterance);
+    try {
+      // Clean text for TTS (remove markdown symbols)
+      const cleanText = text.replace(/[#*`_~]/g, '');
+
+      const res = await synthesizeVoiceResponse(cleanText, lang);
+
+      if (res.audio_data) {
+        const audio = new Audio(`data:audio/mp3;base64,${res.audio_data}`);
+        audioRef.current = audio;
+
+        audio.onended = () => setSpeakingId(null);
+        audio.onerror = () => {
+          setSpeakingId(null);
+          toast.error("Audio playback failed");
+        };
+
+        audio.play();
+      } else {
+        toast.error("Failed to generate audio");
+        setSpeakingId(null);
+      }
+    } catch (error) {
+      console.error("TTS Error:", error);
+      toast.error("Voice service unavailable");
+      setSpeakingId(null);
+    }
   };
 
   useEffect(() => {
     return () => {
-      if (synthRef.current) synthRef.current.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, []);
 
@@ -247,7 +263,7 @@ export default function ChatPage({
       // 1. Create chat if it doesn't exist
       if (!currentChatId && !isDemo) {
         const title = queryText.slice(0, 25);
-        const createRes = await createChat(currentUser.uid, title);
+        const createRes = await createChat(currentUser.uid, title, lang);
         if (createRes.ok) {
           currentChatId = createRes.chat.chatId;
           setChats(prev => {
@@ -645,6 +661,9 @@ export default function ChatPage({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        style={{
+          "--chat-bg": `url(${isMobile ? mobileChatBanner : chatBanner})`
+        }}
       >
         {isDragging && (
           <div className="drag-overlay">
@@ -664,7 +683,7 @@ export default function ChatPage({
               <PanelLeft size={26} />
             </button>
 
-            <select className="mode-select">
+            <select className="mode-select" disabled>
               <option value="v1">NyayaSetu v1</option>
               <option value="v2">NyayaSetu v2</option>
             </select>

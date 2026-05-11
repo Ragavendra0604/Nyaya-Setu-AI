@@ -1,5 +1,5 @@
 import './LanguageSelectionScreen.css';
-import logo from '../assets/app_logo.png';
+import logo from '../assets/app_logo.jpeg';
 import i18n from 'i18next';
 
 const languages = [

@@ -6,3 +6,4 @@ python-dotenv
 torch
 faster-whisper
 langdetect
+gTTS

@@ -12,9 +12,7 @@ import { auth } from "./firebase";
 import { getUser } from "./services/api";
 
 function App() {
-  const [selectedLanguage, setSelectedLanguage] = useState(
-    localStorage.getItem("lang") || null
-  );
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
 
   const [showDashboard, setShowDashboard] = useState(true);
   const [showChat, setShowChat] = useState(false);
@@ -62,6 +60,29 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // 🔄 Browser History Management (Back Button Support)
+  useEffect(() => {
+    const handlePopState = () => {
+      if (showProfile) {
+        setShowProfile(false);
+      } else if (showChat) {
+        setShowChat(false);
+      } else if (showLogin) {
+        setShowLogin(false);
+      } else if (selectedLanguage) {
+        setSelectedLanguage(null);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [showProfile, showChat, showLogin, selectedLanguage]);
+
+  // Helper to push history state
+  const pushState = () => {
+    window.history.pushState(null, "", window.location.pathname);
+  };
+
   // 🌐 Language screen
   if (!selectedLanguage) {
     return (
@@ -69,6 +90,7 @@ function App() {
         onSelectLanguage={(lang) => {
           localStorage.setItem("lang", lang);
           setSelectedLanguage(lang);
+          pushState();
         }}
       />
     );
@@ -90,7 +112,7 @@ function App() {
       <Profile
         userProfile={userProfile}
         currentUser={currentUser}
-        onBack={() => setShowProfile(false)}
+        onBack={() => window.history.back()}
         onLanguageChange={(lang) => {
           localStorage.setItem("lang", lang);
           setSelectedLanguage(lang);
@@ -105,7 +127,10 @@ function App() {
       <ChatPage
         selectedLanguage={selectedLanguage}
         isDemo={isDemo}
-        setShowChat={setShowChat}
+        setShowChat={(val) => {
+          if (!val) window.history.back();
+          else setShowChat(true);
+        }}
         setShowProfile={setShowProfile}
         currentUser={currentUser}     // 🔥 pass user
         userProfile={userProfile}     // 🔥 pass profile
@@ -139,9 +164,18 @@ function App() {
           setSelectedLanguage(lang);
         }}
         setShowDashboard={setShowDashboard}
-        setShowChat={setShowChat}
-        setShowLogin={setShowLogin}
-        setShowProfile={setShowProfile}
+        setShowChat={(val) => {
+          setShowChat(val);
+          if (val) pushState();
+        }}
+        setShowLogin={(val) => {
+          setShowLogin(val);
+          if (val) pushState();
+        }}
+        setShowProfile={(val) => {
+          setShowProfile(val);
+          if (val) pushState();
+        }}
         isLoggedIn={isLoggedIn}
         setIsDemo={setIsDemo}
       />

@@ -68,10 +68,9 @@ class MediaService:
         if not api_key:
             return ""
 
-        # Using Google Gemma via OpenRouter as requested
         model_id = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
         
-        print(f"👁️ Extracting media information with NVIDIA Nemotron ({model_id})...")
+        print(f"Extracting media information with NVIDIA Nemotron ({model_id})...")
         
         messages = [
             {
@@ -106,18 +105,18 @@ class MediaService:
                     "model": model_id,
                     "messages": messages
                 },
-                timeout=20 # Strict timeout to prevent UI hang
+                timeout=60
             )
             
             if response.status_code == 200:
                 result = response.json()
                 description = result['choices'][0]['message']['content']
-                print("✅ Media context extraction complete.")
+                print("Media context extraction complete.")
                 return description
             else:
-                print(f"⚠️ Vision Error ({response.status_code}): {response.text}")
+                print(f"Vision Error ({response.status_code}): {response.text}")
                 return ""
                 
         except Exception as e:
-            print(f"⚠️ Vision Exception: {e}")
+            print(f"Vision Exception: {e}")
             return ""

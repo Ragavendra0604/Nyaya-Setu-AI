@@ -15,5 +15,6 @@ router.delete('/:chatId', ChatController.deleteChat);
 router.post('/:chatId/clear', ChatController.clearChat);
 router.post('/:chatId/message/:messageId/rate', ChatController.rateMessage);
 router.post('/evaluate', ChatController.evaluate);
+router.post('/tts', ChatController.textToSpeech);
 
 module.exports = router;

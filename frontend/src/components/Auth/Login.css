@@ -80,11 +80,53 @@ label {
 
 .input-group input {
   width: 100%;
-  padding: 10px 12px 10px 36px;
+  padding: 10px 40px 10px 36px;
   border-radius: 10px;
   border: 1px solid #d1d5db;
   font-size: 0.85rem;
   outline: none;
+}
+
+.mic-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 5px;
+  border-radius: 50%;
+}
+
+.mic-btn:hover {
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.1);
+}
+
+.mic-btn.listening {
+  color: #ff4d4d;
+  background: rgba(255, 77, 77, 0.1);
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 77, 77, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
+  }
 }
 
 .input-group input:focus {
@@ -95,12 +137,12 @@ label {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 18px;  
+  margin-top: 18px;
 }
 
 .password-header label {
-  margin: 0;          
-  line-height: 1;  
+  margin: 0;
+  line-height: 1;
 }
 
 .forgot {

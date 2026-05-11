@@ -1,80 +1,106 @@
 import "./Login.css";
-import logo from "../../assets/app_logo.png";
-import { ArrowLeftCircle, Mail, KeyRound, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import logo from "../../assets/app_logo.jpeg";
+import { ArrowLeftCircle, Mail, KeyRound, ArrowRight, Mic, MicOff } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { auth } from "../../firebase";
-import { syncProfile } from "../../services/api";
+import { sendOtp, verifyOtp, syncProfile } from "../../services/api";
 import { toast } from "react-hot-toast";
 
 export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }) {
   const [step, setStep] = useState(1);
-  const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isListening, setIsListening] = useState(false);
 
   const { t } = useTranslation("otp");
 
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        { size: "invisible" }
-      );
+  // STT Setup
+  const startSTT = (target) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition not supported in this browser");
+      return;
     }
-    return window.recaptchaVerifier;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = localStorage.getItem("lang") === "hi" ? "hi-IN" : 
+                       localStorage.getItem("lang") === "ta" ? "ta-IN" : "en-IN";
+    
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (target === "email") {
+        // Clean up email (remove spaces, etc.)
+        setEmail(transcript.toLowerCase().replace(/\s/g, ""));
+      } else if (target === "otp") {
+        // Only take digits
+        setOtp(transcript.replace(/\D/g, ""));
+      }
+    };
+
+    recognition.start();
   };
 
   const handleSendOtp = async () => {
-    if (!contact) return setError("Enter phone number with country code, e.g. +919876543210");
+    if (!email) return setError("Enter your email address");
+    if (!email.includes("@")) return setError("Enter a valid email address");
 
     setError("");
     setLoading(true);
 
     try {
-      const appVerifier = setupRecaptcha();
-      const result = await signInWithPhoneNumber(auth, contact, appVerifier);
-
-      setConfirmationResult(result);
-      setStep(2);
+      const result = await sendOtp(email);
+      if (result.ok) {
+        setStep(2);
+        toast.success(result.isMock ? "Mock OTP generated! Check server console." : "Verification code sent to your email");
+      } else {
+        setError(result.error || "Failed to send code");
+      }
     } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to send OTP");
+      setError("Server connection failed");
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp) return setError("Enter OTP");
+    if (!otp) return setError("Enter the 6-digit code");
 
     setError("");
     setLoading(true);
 
     try {
-      const result = await confirmationResult.confirm(otp);
+      const result = await verifyOtp(email, otp);
+      
+      if (result.ok) {
+        // Use the real UID returned from the backend (linked to Firebase Auth)
+        await syncProfile({
+          uid: result.uid,
+          email: result.email,
+          displayName: result.email.split("@")[0],
+          phone: "",
+          language: localStorage.getItem("lang") || "en",
+        });
 
-      // Sync profile (creates if not exists)
-      await syncProfile({
-        uid: result.user.uid,
-        email: result.user.email || `${contact}@phone.auth`,
-        displayName: result.user.displayName || "User",
-        phone: contact,
-        language: localStorage.getItem("lang") || "en",
-      });
+        // Store basic info for immediate UI use
+        localStorage.setItem("userUid", result.uid);
 
-      setIsLoggedIn(true);
-      setShowOTP(false);
-      setShowLogin(false);
-      toast.success("Login successful");
+        setIsLoggedIn(true);
+        setShowOTP(false);
+        setShowLogin(false);
+        toast.success("Login successful");
+      } else {
+        setError(result.error || "Invalid code");
+        toast.error(result.error || "Invalid code");
+      }
     } catch (err) {
       console.error(err);
-      setError("Invalid OTP");
-      toast.error("Invalid OTP");
+      setError("Verification failed");
     } finally {
       setLoading(false);
     }
@@ -97,23 +123,28 @@ export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }
           {step === 2 && t("step2")}
         </p>
 
-        <div id="recaptcha-container"></div>
-
         {step === 1 && (
           <>
-            <label>Phone Number</label>
+            <label>Email Address</label>
             <div className="input-group">
               <Mail className="input-icon" size={18} />
               <input
-                type="text"
-                placeholder="+919876543210"
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
+              <button 
+                className={`mic-btn ${isListening ? 'listening' : ''}`}
+                onClick={() => startSTT("email")}
+                title="Speak email"
+              >
+                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+              </button>
             </div>
 
             <button className="login-primary" onClick={handleSendOtp} disabled={loading}>
-              {loading ? "Sending..." : "Get OTP"} <ArrowRight size={18} />
+              {loading ? "Sending..." : "Get Code"} <ArrowRight size={18} />
             </button>
           </>
         )}
@@ -129,6 +160,13 @@ export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
               />
+              <button 
+                className={`mic-btn ${isListening ? 'listening' : ''}`}
+                onClick={() => startSTT("otp")}
+                title="Speak code"
+              >
+                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+              </button>
             </div>
 
             <button className="login-primary" onClick={handleVerifyOtp} disabled={loading}>
@@ -138,7 +176,7 @@ export default function LoginWithOTP({ setShowOTP, setShowLogin, setIsLoggedIn }
         )}
 
         {error && (
-          <p style={{ color: "red", marginTop: "10px", fontSize: "0.8rem" }}>
+          <p className="error-message" style={{ color: "#ff4d4d", marginTop: "10px", fontSize: "0.85rem", fontWeight: "500" }}>
             {error}
           </p>
         )}

@@ -2,9 +2,11 @@ from flask import Blueprint, request, jsonify
 from controllers.ai_controller import AIController
 
 from services.stt_service import SttService
+from services.tts_service import TtsService
 
 ai_bp = Blueprint('ai', __name__)
 stt_service = SttService()
+tts_service = TtsService()
 
 @ai_bp.route("/", methods=["GET"])
 def home():
@@ -77,5 +79,23 @@ def evaluate():
         result = AIController.evaluate_response(user_query, mode, ai_response)
         return jsonify(result), 200
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@ai_bp.route("/tts", methods=["POST"])
+def tts():
+    try:
+        data = request.get_json()
+        text = data.get("text")
+        language = data.get("language", "English")
+
+        if not text:
+            return jsonify({"error": "text is required"}), 400
+
+        result = tts_service.text_to_speech(text, language)
+        if result["ok"]:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500

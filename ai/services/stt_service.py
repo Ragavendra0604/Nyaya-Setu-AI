@@ -21,13 +21,13 @@ class SttService:
         return cls._instance
 
     def _init_model(self):
-        print("\n⏳ Auto-detecting GPU for Whisper...")
+        print("\nAuto-detecting GPU for Whisper...")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         
         if self.device == "cuda":
             torch.cuda.empty_cache()
             free_vram = torch.cuda.mem_get_info()[0] / 1e9
-            print(f"💾 Free VRAM: {free_vram:.1f} GB")
+            print(f"Free VRAM: {free_vram:.1f} GB")
             
             if free_vram >= 6.0:
                 self.model_size = "large-v3"
@@ -43,7 +43,7 @@ class SttService:
             self.model_size = "medium"
             self.compute_type = "int8"
 
-        print(f"✅ Selected Whisper Model: {self.model_size} ({self.compute_type})")
+        print(f"Selected Whisper Model: {self.model_size} ({self.compute_type})")
         start_load = time.time()
         
         # Initialize model
@@ -54,7 +54,7 @@ class SttService:
             num_workers=2,
             download_root="./wmodels"
         )
-        print(f"✅ Whisper loaded in {time.time() - start_load:.1f}s")
+        print(f"Whisper loaded in {time.time() - start_load:.1f}s")
         
         self.tmp_dir = tempfile.mkdtemp(prefix="nyaya_stt_")
 
@@ -64,7 +64,7 @@ class SttService:
         
         # Check if ffmpeg exists
         if not shutil.which("ffmpeg"):
-            print("⚠️ WARNING: ffmpeg not found. Skipping preprocessing. Transcription quality may be affected.")
+            print("WARNING: ffmpeg not found. Skipping preprocessing. Transcription quality may be affected.")
             return input_path
 
         # Robust FFmpeg command for any input format
@@ -84,7 +84,7 @@ class SttService:
             subprocess.run(cmd, capture_output=True, check=True)
             return output_path
         except Exception as e:
-            print(f"⚠️ FFmpeg failed: {e}. Using raw file.")
+            print(f"FFmpeg failed: {e}. Using raw file.")
             return input_path
 
     def transcribe(self, audio_data_base64, language=None):
