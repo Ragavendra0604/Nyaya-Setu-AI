@@ -16,8 +16,16 @@
   place-items: center;
   padding: 12px;
   color: var(--text);
-  background: linear-gradient(180deg, #f7faf7 0%, #eef3ef 100%);
   overflow: hidden;
+}
+
+.language-screen {
+  background:
+    linear-gradient(rgba(17,149,58,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,149,58,0.03) 1px, transparent 1px),
+    radial-gradient(circle at top, #e6f8ea 0%, #f5faf5 60%);
+    
+  background-size: 32px 32px, 32px 32px, cover;
 }
 
 .language-card {

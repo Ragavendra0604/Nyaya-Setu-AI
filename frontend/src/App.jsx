@@ -178,6 +178,7 @@ function App() {
         }}
         isLoggedIn={isLoggedIn}
         setIsDemo={setIsDemo}
+        setIsLoggedIn={setIsLoggedIn}
       />
     </>
   );

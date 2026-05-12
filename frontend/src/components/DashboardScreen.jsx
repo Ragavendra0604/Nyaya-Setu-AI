@@ -5,10 +5,11 @@ import tamBanner from '../assets/tam_banner.jpeg';
 import logo from '../assets/app_logo.jpeg';
 import {
   Scale, Languages, Sparkles, HelpCircle, MessageSquare,
-  Mic, Lightbulb, ClipboardList, Users, Handshake, User
+  Mic, Lightbulb, ClipboardList, Users, Handshake, User, Menu, X 
 } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
+import { useState } from "react";
 
 const bannerByLanguage = {
   en: engBanner,
@@ -24,7 +25,8 @@ function DashboardScreen({
   setShowLogin,
   setShowDashboard,
   setIsDemo,
-  setShowProfile
+  setShowProfile,
+  setIsLoggedIn
 }) {
   const { t } = useTranslation("dashboard");
 
@@ -82,40 +84,139 @@ function DashboardScreen({
     },
   ];
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <main className="dashboard-screen">
-      <aside className="dashboard-sidebar">
-        <div className="dashboard-brand">
-          <div className="dashboard-brand-mark">
-            <img src={logo} alt="NyayaSetu AI" />
+      <>
+        <header className="mobile-header">
+          <div className="mobile-header-left">
+            <div className="dashboard-brand-mark">
+              <img src={logo} alt="NyayaSetu AI" />
+            </div>
+
+            <div className="mobile-header-text">
+              <h2>NyayaSetu AI</h2>
+            </div>
           </div>
 
-          <div className="dashboard-brand-name">
-            <h2>NyayaSetu AI</h2>
-          </div>
-          <div className="dashboard-brand-actions">
-            <span
-              className="icon"
-              onClick={() => {
-                i18n.changeLanguage("en");
-                onSelectLanguage(null);
-              }}
-            >
-              <Languages size={19} />
-            </span>
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Menu size={22} />
+          </button>
+        </header>
 
-            {isLoggedIn && (
-              <span
-                className="icon"
-                onClick={() => setShowProfile(true)}
-                title="Profile"
+        {mobileMenuOpen && (
+          <div
+            className="mobile-overlay"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+
+        <aside
+          className={`dashboard-sidebar ${
+            mobileMenuOpen ? "mobile-open" : ""
+          }`}
+        >
+          <div className="sidebar-inner">
+
+            <div className="mobile-sidebar-top">
+              <div className="dashboard-brand-name">
+                <div className="dashboard-brand-mark">
+                  <img src={logo} alt="NyayaSetu AI" />
+                </div>
+
+                <div>
+                  <h2>NyayaSetu AI</h2>
+                  <small>Legal Guidance Assistant</small>
+                </div>
+              </div>
+
+              <button
+                className="mobile-close-btn"
+                onClick={() => setMobileMenuOpen(false)}
               >
-                <User size={19} />
-              </span>
-            )}
+                <X size={20} />
+              </button>
+            </div>
+
+            <nav className="sidebar-nav">
+
+              <button className="sidebar-link active">
+                <Scale size={19} />
+                <span>Dashboard</span>
+              </button>
+
+              <button
+                className="sidebar-link"
+                onClick={() => {
+                  setIsDemo(false);
+                  setShowDashboard(false);
+                  setShowChat(true);
+                }}
+              >
+                <MessageSquare size={19} />
+                <span>AI Chat</span>
+              </button>
+
+              <button
+                className="sidebar-link"
+                onClick={() => {
+                  i18n.changeLanguage("en");
+                  onSelectLanguage(null);
+                }}
+              >
+                <Languages size={19} />
+                <span>Languages</span>
+              </button>
+
+              {isLoggedIn && (
+                <button
+                  className="sidebar-link"
+                  onClick={() => setShowProfile(true)}
+                >
+                  <User size={19} />
+                  <span>Profile</span>
+                </button>
+              )}
+            </nav>
+
+            <div className="sidebar-footer">
+              {isLoggedIn ? (
+                <button
+                  className="logout-btn"
+                  onClick={() => {
+                    localStorage.removeItem("token");
+
+                    setIsLoggedIn(false);
+
+                    setShowProfile(false);
+                    setShowChat(false);
+                    setShowLogin(false);
+
+                    setShowDashboard(true);
+                    setIsDemo(false);
+                  }}
+                >
+                  Logout
+                </button>
+              ) : (
+                <button
+                  className="login-btn"
+                  onClick={() => {
+                    setShowDashboard(false);
+                    setShowLogin(true);
+                  }}
+                >
+                  Login / Signup
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      </aside>
+        </aside>
+      </>
 
       <section className="dashboard-content">
         <div className="hero-card">

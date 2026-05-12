@@ -1,27 +1,77 @@
 .profile-container {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
+
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
+  display: grid;
+  place-items: center;
+
+  padding: 14px;
+
+  overflow: hidden;
+
   z-index: 2000;
-  padding: 20px;
+
+  background:
+    linear-gradient(rgba(17,149,58,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,149,58,0.03) 1px, transparent 1px),
+    radial-gradient(circle at top, #e6f8ea 0%, #f5faf5 60%);
+
+  background-size:
+    32px 32px,
+    32px 32px,
+    cover;
 }
 
 .profile-card {
-  width: 100%;
-  max-width: 450px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 20px 40px rgba(6, 78, 59, 0.1);
+  width: min(100%, 520px);
+
+  max-height: calc(100vh - 28px);
+
+  overflow: hidden;
+
+  background: rgba(255, 255, 255, 0.82);
+
+  backdrop-filter: blur(22px);
+
+  border: 1px solid rgba(16, 185, 129, 0.14);
+
+  border-radius: 28px;
+
+  padding: 22px;
+
+  box-shadow:
+    0 20px 40px rgba(6, 78, 59, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  position: relative;
+}
+
+.profile-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(16,185,129,0.14),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(16,185,129,0.08),
+      transparent 40%
+    );
+  pointer-events: none;
+}
+
+.profile-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes slideUp {
@@ -40,11 +90,11 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 22px;
 }
 
 .profile-header h1 {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #064e3b;
   margin: 0;
@@ -54,7 +104,11 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  margin-bottom: 32px;
+  margin-bottom: 22px;
+}
+
+.setting-item {
+  padding: 10px;
 }
 
 .user-avatar {
@@ -70,16 +124,16 @@
 }
 
 .user-info h2 {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: #064e3b;
   margin: 0 0 4px 0;
 }
 
 .user-info p {
-  font-size: 0.9rem;
-  color: #065f46;
-  opacity: 0.8;
+  font-size: 0.85rem;
+  color: var(--dashboard-muted);
+  opacity: 0.9;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -88,15 +142,15 @@
 
 .profile-divider {
   height: 1px;
+  margin-bottom: 20px;
   background: rgba(16, 185, 129, 0.1);
-  margin-bottom: 32px;
 }
 
 .profile-settings {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  margin-bottom: 40px;
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
 .setting-item {
@@ -207,4 +261,53 @@
 
 .setting-toggle.active::after {
   left: 24px;
+}
+
+@media (max-width: 768px) {
+
+  .profile-container {
+    padding: 14px;
+  }
+
+  .profile-card {
+    max-width: 100%;
+    border-radius: 24px;
+    padding: 22px 18px;
+  }
+
+  .profile-header {
+    margin-bottom: 24px;
+  }
+
+  .profile-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .profile-main {
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .user-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 20px;
+  }
+
+  .user-info h2 {
+    font-size: 1.1rem;
+  }
+
+  .profile-settings {
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .setting-item {
+    padding: 10px;
+  }
+
+  .logout-button {
+    padding: 14px;
+  }
 }

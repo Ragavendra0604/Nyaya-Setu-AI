@@ -630,22 +630,24 @@ export default function ChatPage({
   return (
     <div className="chat-layout">
       <aside className={`chat-sidebar ${sidebarOpen ? "open" : "closed"}`}>
-        <div className="sidebar-header">
-          <div className="sidebar-top-controls">
-            <div className="back-btn chat-back-btn" onClick={() => setShowChat(false)}>
-              <ArrowLeftCircle />
+        <div className="chat-sidebar-inner">
+          <div className="sidebar-header">
+            <div className="sidebar-top-controls">
+              <div className="back-btn chat-back-btn" onClick={() => setShowChat(false)}>
+                <ArrowLeftCircle />
+              </div>
+
+              <div className="close-btn" onClick={() => setSidebarOpen(false)}>
+                ✖
+              </div>
             </div>
 
-            <div className="close-btn" onClick={() => setSidebarOpen(false)}>
-              ✖
+            <div className="sidebar-brand">
+              <div className="chat-brand">
+                <Scale size={20} />
+              </div>
+              <span>{t("appName")}</span>
             </div>
-          </div>
-
-          <div className="sidebar-brand">
-            <div className="chat-brand">
-              <Scale size={20} />
-            </div>
-            <span>{t("appName")}</span>
           </div>
         </div>
 
