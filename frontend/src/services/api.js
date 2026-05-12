@@ -207,13 +207,18 @@ export async function transcribeVoiceInput(blob) {
   return { ok: true, transcript: 'Voice transcription placeholder', sourceSize: blob?.size ?? 0 };
 }
 
-export async function synthesizeVoiceResponse(text, language = 'English') {
-  const response = await fetch(`${API_URL}/chats/tts`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, language }),
-  });
-  return response.json();
+export async function synthesizeVoiceResponse(text, language = 'en') {
+  try {
+    const response = await fetch(`${API_URL}/chats/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, language }),
+    });
+    return response.json();
+  } catch (error) {
+    console.error('Synthesis error:', error);
+    return { ok: false, error: error.message };
+  }
 }
 
 export async function updateUserSettings(settings) {

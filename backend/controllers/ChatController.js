@@ -337,17 +337,21 @@ class ChatController {
       const { text, language } = req.body;
       const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5001';
 
-      const response = await fetch(`${PYTHON_API_URL}/tts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, language }),
+      console.log(`Sending TTS request to ${PYTHON_API_URL}/tts for language: ${language}`);
+
+      const response = await axios.post(`${PYTHON_API_URL}/tts`, {
+        text,
+        language
       });
 
-      const data = await response.json();
-      res.json(data);
+      res.json(response.data);
     } catch (error) {
-      console.error('TTS error:', error);
-      res.status(500).json({ error: error.message });
+      console.error('TTS error:', error.message);
+      const errorDetail = error.response?.data?.error || error.message;
+      res.status(500).json({
+        ok: false,
+        error: 'TTS Service Error: ' + errorDetail
+      });
     }
   }
 }

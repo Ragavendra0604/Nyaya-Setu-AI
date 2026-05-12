@@ -4,6 +4,8 @@ from controllers.ai_controller import AIController
 from services.stt_service import SttService
 from services.tts_service import TtsService
 
+from services.tts_service import TtsService
+
 ai_bp = Blueprint('ai', __name__)
 stt_service = SttService()
 tts_service = TtsService()
@@ -38,6 +40,16 @@ def ask():
 
         result = AIController.get_legal_guidance(query, language, mode, image_data, pdf_data)
         
+        # 3. Generate TTS audio instantly for the response
+        try:
+            answer_text = result.get("answer", "")
+            if answer_text:
+                tts_result = tts_service.text_to_speech(answer_text, language)
+                if tts_result.get("ok"):
+                    result["audio_data"] = tts_result.get("audio_data")
+        except Exception as tts_err:
+            print(f"Inline TTS Error: {tts_err}")
+
         # Merge steps
         result["pipeline_steps"] = external_steps + result.get("pipeline_steps", [])
         

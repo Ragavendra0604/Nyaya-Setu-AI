@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import "./chat.css";
-import { ArrowLeftCircle, Scale, Plus, PanelLeft, Mic, Send, User, LogOut, Paperclip, X, ShieldCheck, CheckCircle, AlertCircle, Volume2, VolumeX, Sparkles } from "lucide-react";
+import { ArrowLeftCircle, Scale, Plus, PanelLeft, Mic, Send, User, LogOut, Paperclip, X, ShieldCheck, CheckCircle, AlertCircle, Volume2, VolumeX, Sparkles, Trash2 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import {
   createChat,
@@ -11,6 +11,7 @@ import {
   clearChat,
   rateMessage,
   evaluateResponse,
+  synthesizeVoiceResponse,
 } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { auth } from "../firebase";
@@ -68,14 +69,23 @@ export default function ChatPage({
   const recorderRef = useRef(null);
   const recordingTimerRef = useRef(null);
   const [speakingId, setSpeakingId] = useState(null);
+  const [loadingTTSId, setLoadingTTSId] = useState(null);
   const audioRef = useRef(null);
+  const synthRef = useRef(window.speechSynthesis);
 
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const lang = selectedLanguage || localStorage.getItem("lang") || "en";
   const isMobile = window.innerWidth <= 768;
 
   useEffect(() => {
     activeChatIndexRef.current = activeChatIndex;
   }, [activeChatIndex]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -124,12 +134,22 @@ export default function ChatPage({
           }));
 
           // Always prepend a "New Chat" and make it active on initial load
-          const newChatEntry = { title: t("newChat"), messages: [], chatId: null };
+          const newChatEntry = {
+            title: t("newChat"),
+            messages: [],
+            chatId: null,
+            tempId: 'initial-new-chat'
+          };
           setChats([newChatEntry, ...transformed]);
           setActiveChatIndex(0);
           activeChatIndexRef.current = 0;
         } else {
-          setChats([{ title: t("newChat"), messages: [], chatId: null }]);
+          setChats([{
+            title: t("newChat"),
+            messages: [],
+            chatId: null,
+            tempId: 'initial-empty-chat'
+          }]);
           setActiveChatIndex(0);
           activeChatIndexRef.current = 0;
         }
@@ -143,59 +163,105 @@ export default function ChatPage({
 
   // Feedback is now handled via rateMessage API
 
-  const updateChatMessages = (index, newMessages, chatId = null) => {
+  const updateChatMessages = (idOrIndex, newMessages, chatId = null) => {
     setChats((prevChats) => {
       const updated = [...prevChats];
-      updated[index] = {
-        ...updated[index],
-        messages: newMessages,
-        chatId: chatId || updated[index].chatId,
-      };
-      return updated;
+      let targetIndex = -1;
+
+      if (chatId) {
+        targetIndex = updated.findIndex((c) => c.chatId === chatId);
+      } else if (typeof idOrIndex === "string") {
+        targetIndex = updated.findIndex(
+          (c) => c.chatId === idOrIndex || c.tempId === idOrIndex
+        );
+      } else {
+        targetIndex = idOrIndex;
+      }
+
+      if (targetIndex !== -1) {
+        updated[targetIndex] = {
+          ...updated[targetIndex],
+          messages: newMessages,
+          chatId: chatId || updated[targetIndex].chatId,
+        };
+        return updated;
+      }
+      return prevChats;
     });
   };
 
-  const handleSpeak = async (text, id) => {
-    if (speakingId === id) {
+  const handleSpeak = async (text, id, prefetchedAudio = null, messageLang = null) => {
+    const targetLang = messageLang || lang; // Use message-specific language if available
+
+    if (speakingId === id || loadingTTSId === id) {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      if (synthRef.current) synthRef.current.cancel();
       setSpeakingId(null);
+      setLoadingTTSId(null);
       return;
     }
 
-    // Stop any current audio
+    // Stop any existing audio
     if (audioRef.current) {
       audioRef.current.pause();
     }
+    if (synthRef.current) synthRef.current.cancel();
 
-    setSpeakingId(id);
+    // 1. If we have prefetched audio, play it immediately!
+    if (prefetchedAudio) {
+      setSpeakingId(id);
+      const audio = new Audio(`data:audio/mp3;base64,${prefetchedAudio}`);
+      audio.playbackRate = playbackSpeed; // Apply speed
+      audioRef.current = audio;
+      audio.onended = () => setSpeakingId(null);
+      audio.onerror = () => {
+        setSpeakingId(null);
+        toast.error("Audio playback failed");
+      };
+      audio.play();
+      return;
+    }
+
+    // 2. Fallback to server-side generation
+    setLoadingTTSId(id);
     try {
-      // Clean text for TTS (remove markdown symbols)
-      const cleanText = text.replace(/[#*`_~]/g, '');
-
-      const res = await synthesizeVoiceResponse(cleanText, lang);
+      const cleanText = text.replace(/[#*`_~]/g, "");
+      const res = await synthesizeVoiceResponse(cleanText, targetLang);
 
       if (res.audio_data) {
+        setLoadingTTSId(null);
+        setSpeakingId(id);
         const audio = new Audio(`data:audio/mp3;base64,${res.audio_data}`);
+        audio.playbackRate = playbackSpeed; // Apply speed
         audioRef.current = audio;
-
         audio.onended = () => setSpeakingId(null);
         audio.onerror = () => {
           setSpeakingId(null);
           toast.error("Audio playback failed");
         };
-
         audio.play();
       } else {
-        toast.error("Failed to generate audio");
-        setSpeakingId(null);
+        // 3. Final fallback to browser-native synthesis
+        console.warn("Server TTS failed, falling back to browser synthesis");
+        const utterance = new SpeechSynthesisUtterance(cleanText.substring(0, 500));
+        const voiceMap = { hi: "hi-IN", ta: "ta-IN", en: "en-US" };
+        utterance.lang = voiceMap[targetLang] || "en-US";
+        utterance.rate = playbackSpeed; // Apply speed
+        utterance.onend = () => {
+          setSpeakingId(null);
+          setLoadingTTSId(null);
+        };
+        setLoadingTTSId(null);
+        setSpeakingId(id);
+        synthRef.current.speak(utterance);
       }
     } catch (error) {
       console.error("TTS Error:", error);
+      setLoadingTTSId(null);
       toast.error("Voice service unavailable");
-      setSpeakingId(null);
     }
   };
 
@@ -266,10 +332,15 @@ export default function ChatPage({
         const createRes = await createChat(currentUser.uid, title, lang);
         if (createRes.ok) {
           currentChatId = createRes.chat.chatId;
+          // Update local state with new ID and title while PRESERVING messages
           setChats(prev => {
             const updated = [...prev];
-            updated[index].chatId = currentChatId;
-            updated[index].title = title;
+            updated[index] = {
+              ...updated[index],
+              chatId: currentChatId,
+              title: title,
+              messages: messagesWithUser // Ensure messages are kept
+            };
             return updated;
           });
         }
@@ -292,6 +363,8 @@ export default function ChatPage({
           id: response.assistantMessage.id,
           text: response.assistantMessage.content || response.answer || "No response received.",
           query: queryText,
+          audio_data: response.audio_data,
+          language: lang, // Store language of the output
           pipeline_steps: response.pipeline_steps || [],
           time: new Date().toLocaleTimeString([], {
             hour: "2-digit",
@@ -366,14 +439,16 @@ export default function ChatPage({
   };
 
   const newChat = () => {
-    // If current chat is empty and has no ID, don't create another one
-    if (chats[activeChatIndex]?.messages.length === 0 && !chats[activeChatIndex]?.chatId) {
+    // If we already have an empty chat at the top, just switch to it
+    if (chats.length > 0 && chats[0].messages.length === 0 && !chats[0].chatId) {
+      setActiveChatIndex(0);
+      activeChatIndexRef.current = 0;
       return;
     }
-    const nextIndex = chats.length;
-    setChats([...chats, { title: t("newChat"), messages: [], chatId: null }]);
-    setActiveChatIndex(nextIndex);
-    activeChatIndexRef.current = nextIndex;
+    const nextChat = { title: t("newChat"), messages: [], chatId: null, tempId: `new-chat-${Date.now()}` };
+    setChats([nextChat, ...chats]);
+    setActiveChatIndex(0);
+    activeChatIndexRef.current = 0;
   };
 
   const clearChatAt = async (index) => {
@@ -405,13 +480,27 @@ export default function ChatPage({
     }
 
     const updated = chats.filter((_, i) => i !== index);
-    setChats(
-      updated.length
-        ? updated
-        : [{ title: t("newChat"), messages: [], chatId: null }]
-    );
-    setActiveChatIndex(0);
-    activeChatIndexRef.current = 0;
+    const finalChats = updated.length
+      ? updated
+      : [{ title: t("newChat"), messages: [], chatId: null }];
+
+    setChats(finalChats);
+
+    // Improve active index handling
+    let nextIndex = activeChatIndex;
+    if (index === activeChatIndex) {
+      nextIndex = Math.max(0, index - 1);
+    } else if (index < activeChatIndex) {
+      nextIndex = activeChatIndex - 1;
+    }
+
+    // Ensure index is within bounds
+    if (nextIndex >= finalChats.length) {
+      nextIndex = Math.max(0, finalChats.length - 1);
+    }
+
+    setActiveChatIndex(nextIndex);
+    activeChatIndexRef.current = nextIndex;
     setMenuOpen(null);
   };
 
@@ -577,7 +666,7 @@ export default function ChatPage({
         <div className="chat-history">
           {chats.map((chat, i) => (
             <div
-              key={chat.chatId || i}
+              key={chat.chatId || chat.tempId || i}
               className={`chat-recent ${i === activeChatIndex ? "active" : ""}`}
               onClick={() => {
                 setActiveChatIndex(i);
@@ -597,15 +686,27 @@ export default function ChatPage({
                 <span className="chat-title">{chat.title}</span>
               )}
 
-              <button
-                className="chat-menu-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMenuOpen(menuOpen === i ? null : i);
-                }}
-              >
-                ⋯
-              </button>
+              <div className="chat-actions-group">
+                <button
+                  className="chat-direct-delete-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteChatAt(i);
+                  }}
+                  title="Delete Chat"
+                >
+                  <Trash2 size={14} />
+                </button>
+                <button
+                  className="chat-menu-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(menuOpen === i ? null : i);
+                  }}
+                >
+                  ⋯
+                </button>
+              </div>
 
               {menuOpen === i && (
                 <div className="chat-menu">
@@ -688,6 +789,24 @@ export default function ChatPage({
               <option value="v2">NyayaSetu v2</option>
             </select>
           </div>
+
+          <div className="header-right">
+            <div className="speed-control">
+              <span className="speed-label">Voice Speed:</span>
+              <select
+                className="speed-select"
+                value={playbackSpeed}
+                onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+              >
+                <option value="0.5">0.5x</option>
+                <option value="0.75">0.75x</option>
+                <option value="1">1.0x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2">2.0x</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="chat-body">
@@ -754,60 +873,67 @@ export default function ChatPage({
                   )}
                 </div>
 
-                {msg.type === "system" && !isDemo && (
+                {msg.type === "system" && (
                   <div className="message-actions">
-                    <div className="feedback-stars">
-                      <span className="feedback-label">{t("feedback")}:</span>
+                    {!isDemo && (
+                      <div className="feedback-stars">
+                        <span className="feedback-label">{t("feedback")}:</span>
+                        {[1, 2, 3, 4, 5].map((rating) => {
+                          const messageKey = getMessageKey(msg);
+                          const selected = ratings[messageKey] || msg.rating;
+                          const active = (hoverRatings[messageKey] || selected) >= rating;
 
-                      {[1, 2, 3, 4, 5].map((rating) => {
-                        const messageKey = getMessageKey(msg);
-                        const selected = ratings[messageKey] || msg.rating;
-                        const active = (hoverRatings[messageKey] || selected) >= rating;
-
-                        return (
-                          <span
-                            key={rating}
-                            className={`feedback-star ${active ? "active" : ""} ${selected ? "disabled" : ""}`}
-                            onClick={() => {
-                              if (!selected) {
-                                handleRate(i, rating);
+                          return (
+                            <span
+                              key={rating}
+                              className={`feedback-star ${active ? "active" : ""} ${selected ? "disabled" : ""}`}
+                              onClick={() => {
+                                if (!selected) {
+                                  handleRate(i, rating);
+                                }
+                              }}
+                              onMouseEnter={() => {
+                                if (!selected) {
+                                  setHoverRatings((prev) => ({
+                                    ...prev,
+                                    [messageKey]: rating,
+                                  }));
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                if (!selected) {
+                                  setHoverRatings((prev) => ({
+                                    ...prev,
+                                    [messageKey]: 0,
+                                  }));
+                                }
+                              }}
+                              title={
+                                selected
+                                  ? `You rated ${selected} star`
+                                  : `${rating} star`
                               }
-                            }}
-                            onMouseEnter={() => {
-                              if (!selected) {
-                                setHoverRatings((prev) => ({
-                                  ...prev,
-                                  [messageKey]: rating,
-                                }));
-                              }
-                            }}
-                            onMouseLeave={() => {
-                              if (!selected) {
-                                setHoverRatings((prev) => ({
-                                  ...prev,
-                                  [messageKey]: 0,
-                                }));
-                              }
-                            }}
-                            title={
-                              selected
-                                ? `You rated ${selected} star`
-                                : `${rating} star`
-                            }
-                          >
-                            ★
-                          </span>
-                        );
-                      })}
-                    </div>
+                            >
+                              ★
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     <div className="message-actions-right">
                       <button
-                        className={`action-icon-btn ${speakingId === i ? 'speaking' : ''}`}
-                        onClick={() => handleSpeak(msg.text, i)}
+                        className={`action-icon-btn ${speakingId === i ? 'speaking' : ''} ${loadingTTSId === i ? 'loading-tts' : ''}`}
+                        onClick={() => handleSpeak(msg.text, i, msg.audio_data, msg.language)}
                         title="Read out loud"
                       >
-                        {speakingId === i ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                        {loadingTTSId === i ? (
+                          <div className="tts-loader"></div>
+                        ) : speakingId === i ? (
+                          <VolumeX size={16} />
+                        ) : (
+                          <Volume2 size={16} />
+                        )}
                       </button>
 
                       <button

@@ -43,20 +43,21 @@ Example format: "**Section 379 IPC / Section 303 BNSS** — Covers theft, punish
 ---
 ## 🌐 LANGUAGE RULE
 * You MUST respond ONLY in the **Selected Language: {language}**
-* Ignore any language mentioned inside the user query
+* DO NOT mix multiple languages (e.g., do not mix Tamil and English). If the selected language is Tamil, the entire response must be in Tamil.
+* Ignore any language mentioned inside the user query.
 
 ---
 ## 📌 LEGAL CONTEXT
 - FIR process: Sections 173-175 BNSS (formerly Sec 154 CrPC).
-- Legal Aid (NALSA): Article 39A Constitution + Legal Services Authorities Act 1987.
-- Rights of arrested persons: Section 47 BNSS.
+- Legal Aid (NALSA): Article 39A Constitution + Legal Services Authorities Act, 1987.
+- Rights of arrested persons: Section 47 BNSS, 2023.
 ---
 ## ⚖️ LEGAL GUARDRAILS (CRITICAL):
 1. **Age Requirements**: For inter-caste/Special Marriage Act cases, explicitly state the legal age: **21 (Male)** and **18 (Female)**.
-2. **Protection Orders**: DO NOT cite Section 125 CrPC for protection (that is for Maintenance). Instead, cite **Section 125-A/126 BNSS** (formerly 125-A CrPC) or **Section 9 of the Family Courts Act, 1999** for temporary injunctions.
+2. **Protection Orders**: Cite the **Protection of Women from Domestic Violence Act, 2005** for protection orders in domestic relationships. For maintenance, cite **Sections 144-147 BNSS, 2023** (formerly Section 125 CrPC). For temporary injunctions, cite **Section 9 of the Family Courts Act, 1984**.
 3. **POSCO Warning**: DO NOT cite POSCO for adult marriages. POSCO applies ONLY to minors.
-4. **Section 498A**: This applies post-marriage for cruelty by husband/relatives. For pre-marriage harassment/intimidation, cite the **SC/ST (Prevention of Atrocities) Act, 1989** (if applicable) or relevant BNS sections for intimidation.
-5. **Domestic Violence**: The Protection of Women from Domestic Violence Act, 2005 applies to domestic relationships (including live-ins/post-marriage).
+4. **Section 498A**: This applies post-marriage for cruelty by husband/relatives. For pre-marriage harassment/intimidation, cite the **SC/ST (Prevention of Atrocities) Act, 1989** only if the victim belongs to a Scheduled Caste or Scheduled Tribe; otherwise cite **Section 351 BNS, 2023** (Criminal Intimidation).
+5. **Domestic Violence**: The Protection of Women from Domestic Violence Act, 2005 applies to domestic relationships.
 
 ---
 ## 🎯 ACCURACY & REALITY CHECK (MANDATORY):
@@ -115,12 +116,16 @@ AI Response:
 {ai_response}
 
 ---
-## OUTPUT FORMAT:
-### Final Score: X/10
-### Mode Compliance: (Pass/Fail)
-### Structure: (Good/Needs Improvement)
-### Legal Accuracy: (Good/Needs Improvement)
-### Final Verdict: (Approved/Needs Fix)"""
+## OUTPUT FORMAT (MANDATORY):
+You MUST provide your evaluation in this EXACT structure:
+
+### 📊 Final Score: [Score]/10
+### ✅ Mode Compliance: [Pass/Fail]
+### 🏗️ Structure: [Good/Needs Improvement]
+### ⚖️ Legal Accuracy: [Good/Needs Improvement]
+### 🏁 Final Verdict: [Approved/Needs Fix]
+
+[Followed by a detailed section-by-section breakdown of WHY these ratings were given, pointing out specific errors or strengths.]"""
 
         evaluation, model = AIService.call_ai(evaluation_prompt)
         return {
