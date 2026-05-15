@@ -23,11 +23,6 @@ class FileProcessor {
     } catch (error) {
       console.error('File extraction error:', error);
       throw error;
-    } finally {
-      // Clean up the temporary file
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
     }
   }
 

@@ -14,5 +14,13 @@
     "How do I file an FIR?",
     "What is the process for a rental agreement?",
     "How to get free legal aid in India?"
-  ]
+  ],
+  "disclaimerTitle": "Important Disclaimer",
+  "disclaimerDesc": "Please ensure the {{type}} you are uploading follows the format shown above. By proceeding, you consent to our processing of this data for legal analysis.",
+  "cancel": "Cancel",
+  "consentBtn": "I Consent & Upload",
+  "image": "image",
+  "document": "document",
+  "welcomeTitle": "Welcome, {{name}}",
+  "welcomeDesc": "How can I help you with Indian law today?"
 }

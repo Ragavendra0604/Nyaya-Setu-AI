@@ -21,6 +21,8 @@ import remarkGfm from "remark-gfm";
 import { Image, FileText, Camera } from "lucide-react";
 import chatBanner from "../assets/chat_banner.jpeg";
 import mobileChatBanner from "../assets/mobile_chat_banner.jpeg";
+import sampleImg from "../assets/sample_img.png";
+import samplePdf from "../assets/sample_pdf.png";
 
 export default function ChatPage({
   selectedLanguage,
@@ -29,6 +31,14 @@ export default function ChatPage({
   currentUser,
   userProfile,
   setShowProfile,
+  chats,
+  setChats,
+  activeChatIndex,
+  setActiveChatIndex,
+  loading,
+  setLoading,
+  mode,
+  setMode
 }) {
   const { t } = useTranslation("chat");
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
@@ -37,16 +47,8 @@ export default function ChatPage({
   const [renameValue, setRenameValue] = useState("");
   const [showDemoOptions, setShowDemoOptions] = useState(isDemo);
 
-  const [chats, setChats] = useState([
-    { chatId: null, title: "New Chat", messages: [] },
-  ]);
-
-  const [activeChatIndex, setActiveChatIndex] = useState(0);
-  const activeChatIndexRef = useRef(0);
-
   const [input, setInput] = useState("");
-  const [mode, setMode] = useState(userProfile?.mode || "simple");
-  const [loading, setLoading] = useState(false);
+  const activeChatIndexRef = useRef(activeChatIndex);
   const [ratings, setRatings] = useState({});
   const [hoverRatings, setHoverRatings] = useState({});
 
@@ -73,12 +75,16 @@ export default function ChatPage({
   const audioRef = useRef(null);
   const synthRef = useRef(window.speechSynthesis);
 
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [disclaimerType, setDisclaimerType] = useState(null); // 'image' or 'document'
+
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const lang = selectedLanguage || localStorage.getItem("lang") || "en";
   const isMobile = window.innerWidth <= 768;
 
   useEffect(() => {
     activeChatIndexRef.current = activeChatIndex;
+    setEvaluations({});
   }, [activeChatIndex]);
 
   useEffect(() => {
@@ -89,7 +95,7 @@ export default function ChatPage({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loading]); // Added loading to trigger scroll when thinking bubble appears
 
   useEffect(() => {
     const handleResize = () => setSidebarOpen(window.innerWidth > 768);
@@ -117,6 +123,7 @@ export default function ChatPage({
               return {
                 type: m.role === "user" ? "user" : "system",
                 text: displayContent,
+                fullContent: m.content || m.query || m.text,
                 time: m.timestamp
                   ? new Date(
                     m.timestamp._seconds
@@ -301,7 +308,8 @@ export default function ChatPage({
 
     const userMsg = {
       type: "user",
-      text: queryText,
+      text: attachedFile ? "[Document Attachment]" : queryText,
+      fullContent: queryText,
       attachment: attachedFile ? {
         url: previewUrl,
         name: attachedFile.name,
@@ -606,7 +614,7 @@ export default function ChatPage({
     let userQuery = "";
     for (let i = msgIndex - 1; i >= 0; i--) {
       if (messages[i].type === "user") {
-        userQuery = messages[i].text;
+        userQuery = messages[i].fullContent || messages[i].text;
         break;
       }
     }
@@ -812,7 +820,19 @@ export default function ChatPage({
         </div>
 
         <div className="chat-body">
-          <div className="chat-messages">
+          {messages.length === 0 && !loading && (
+            <div className="welcome-screen">
+              <div className="welcome-content">
+                <div className="welcome-icon">
+                  <Scale size={48} />
+                </div>
+                <h1>{t("welcomeTitle", { name: userProfile?.name || currentUser?.displayName || (isDemo ? "Guest" : "User") })}</h1>
+                <p>{t("welcomeDesc")}</p>
+              </div>
+            </div>
+          )}
+
+          <div className={`chat-messages ${messages.length > 0 ? 'has-content' : ''}`}>
             {messages.map((msg, i) => (
               <div key={i} className={`chat-bubble ${msg.type}`}>
                 <div className="chat-bubble-content">
@@ -977,7 +997,7 @@ export default function ChatPage({
             ))}
 
             {loading && (
-              <div className="chat-bubble system thinking-bubble">
+              <div key={`thinking-${messages.length}`} className="chat-bubble system thinking-bubble">
                 <div className="pipeline-tracker-ui">
                   <div className="pipeline-header">
                     <div className="loader-spinner"></div>
@@ -1001,6 +1021,10 @@ export default function ChatPage({
                       </div>
                     )}
                     <div className="live-step delayed-3">
+                      <span className="step-icon">📚</span>
+                      <span className="step-text">Searching Legal Database...</span>
+                    </div>
+                    <div className="live-step delayed-4">
                       <span className="step-icon">🧠</span>
                       <span className="step-text">Applying Legal Reasoning...</span>
                     </div>
@@ -1012,7 +1036,7 @@ export default function ChatPage({
             <div ref={messagesEndRef} />
           </div>
 
-          {showDemoOptions && (
+          {messages.length === 0 && showDemoOptions && (
             <div className="demo-bottom">
               <div className="demo-options-row">
                 {(t("demoOptions", { returnObjects: true }) || []).map((q, j) => (
@@ -1032,13 +1056,13 @@ export default function ChatPage({
         <div className="chat-input-wrapper">
           {showUploadMenu && (
             <div className="upload-menu">
-              <button onClick={() => { fileInputRef.current.accept = "image/*"; fileInputRef.current.click(); setShowUploadMenu(false); }}>
+              <button onClick={() => { setDisclaimerType("image"); setShowDisclaimer(true); setShowUploadMenu(false); }}>
                 <Image size={18} /> Photos & Videos
               </button>
               <button onClick={() => { fileInputRef.current.accept = "audio/*"; fileInputRef.current.click(); setShowUploadMenu(false); }}>
                 <Mic size={18} /> Audio
               </button>
-              <button onClick={() => { fileInputRef.current.accept = ".pdf,.doc,.docx,.txt"; fileInputRef.current.click(); setShowUploadMenu(false); }}>
+              <button onClick={() => { setDisclaimerType("document"); setShowDisclaimer(true); setShowUploadMenu(false); }}>
                 <FileText size={18} /> Documents
               </button>
               <button onClick={() => { toast.error("Camera access not implemented"); setShowUploadMenu(false); }}>
@@ -1133,6 +1157,47 @@ export default function ChatPage({
               <button className="close-fullscreen" onClick={() => setFullScreenImage(null)}>
                 <X size={24} />
               </button>
+            </div>
+          </div>
+        )}
+
+        {showDisclaimer && (
+          <div className="disclaimer-overlay" onClick={() => setShowDisclaimer(false)}>
+            <div className="disclaimer-modal" onClick={e => e.stopPropagation()}>
+              <div className="disclaimer-image-container">
+                <img
+                  src={disclaimerType === "image" ? sampleImg : samplePdf}
+                  alt="Disclaimer Sample"
+                />
+              </div>
+              <div className="disclaimer-content">
+                <h2>{t("disclaimerTitle")}</h2>
+                <p>
+                  {t("disclaimerDesc", { type: t(disclaimerType) })}
+                </p>
+              </div>
+              <div className="disclaimer-actions">
+                <button
+                  className="disclaimer-btn cancel"
+                  onClick={() => setShowDisclaimer(false)}
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  className="disclaimer-btn consent"
+                  onClick={() => {
+                    if (disclaimerType === "image") {
+                      fileInputRef.current.accept = "image/*";
+                    } else {
+                      fileInputRef.current.accept = ".pdf,.doc,.docx,.txt";
+                    }
+                    fileInputRef.current.click();
+                    setShowDisclaimer(false);
+                  }}
+                >
+                  {t("consentBtn")}
+                </button>
+              </div>
             </div>
           </div>
         )}

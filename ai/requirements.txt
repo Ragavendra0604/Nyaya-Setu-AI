@@ -7,3 +7,10 @@ torch
 faster-whisper
 langdetect
 gTTS
+chromadb
+pypdf
+sentence-transformers
+requests
+beautifulsoup4
+pytesseract 
+Pillow

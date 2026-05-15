@@ -25,6 +25,14 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
+  // 🔥 LIFTED CHAT STATES
+  const [chats, setChats] = useState([
+    { chatId: null, title: "New Chat", messages: [] },
+  ]);
+  const [activeChatIndex, setActiveChatIndex] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState("simple"); // Default mode
+
   // 🔥 Firebase Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -44,6 +52,7 @@ function App() {
 
           if (response.ok && response.user) {
             setUserProfile(response.user);
+            setMode(response.user.mode || "simple");
           } else {
             console.log("User profile still not found in backend");
           }
@@ -54,6 +63,10 @@ function App() {
         setCurrentUser(null);
         setUserProfile(null);
         setIsLoggedIn(false);
+        // Reset chat states on logout
+        setChats([{ chatId: null, title: "New Chat", messages: [] }]);
+        setActiveChatIndex(0);
+        setLoading(false);
       }
     });
 
@@ -132,8 +145,17 @@ function App() {
           else setShowChat(true);
         }}
         setShowProfile={setShowProfile}
-        currentUser={currentUser}     // 🔥 pass user
-        userProfile={userProfile}     // 🔥 pass profile
+        currentUser={currentUser}
+        userProfile={userProfile}
+        // Lifted states
+        chats={chats}
+        setChats={setChats}
+        activeChatIndex={activeChatIndex}
+        setActiveChatIndex={setActiveChatIndex}
+        loading={loading}
+        setLoading={setLoading}
+        mode={mode}
+        setMode={setMode}
       />
     );
   }
@@ -165,6 +187,18 @@ function App() {
         }}
         setShowDashboard={setShowDashboard}
         setShowChat={(val) => {
+          if (val) {
+            // Only add a new chat if the current top chat is not already empty/new
+            const topChat = chats[0];
+            const isTopEmpty = topChat && !topChat.chatId && (!topChat.messages || topChat.messages.length === 0);
+
+            if (!isTopEmpty) {
+              setChats([{ chatId: null, title: "New Chat", messages: [] }, ...chats]);
+              setActiveChatIndex(0);
+            } else {
+              setActiveChatIndex(0);
+            }
+          }
           setShowChat(val);
           if (val) pushState();
         }}

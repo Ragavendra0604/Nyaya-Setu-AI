@@ -30,7 +30,8 @@ class ChatModel {
           .get();
         return snapshot.docs.map(doc => ({ chatId: doc.id, ...doc.data() }));
       } catch (indexError) {
-        console.warn('Firestore index missing, falling back to in-memory sorting.');
+        console.warn('Firestore index missing. Create it here:', indexError.message);
+        console.info('Falling back to in-memory sorting for now...');
         const snapshot = await db.collection('chats')
           .where('userId', '==', userId)
           .get();
@@ -64,8 +65,16 @@ class ChatModel {
         role: message.role,
         content: message.content,
         query: message.query || null,
+        mediaType: message.mediaType || null,
         timestamp: new Date(),
+        ...message // Include any other fields like audio_data if needed, but be careful with size
       };
+
+      // Remove redundant fields that were spread from message
+      delete messageData.role;
+      messageData.role = message.role; // Re-assign to ensure it's there
+      delete messageData.content;
+      messageData.content = message.content;
 
       await db.collection('chats').doc(chatId).update({
         messages: admin.firestore.FieldValue.arrayUnion(messageData),
@@ -113,20 +122,29 @@ class ChatModel {
 
   static async rateMessage(chatId, messageId, rating) {
     try {
-      const chat = await this.getChatById(chatId);
-      const messages = chat.messages.map(msg => {
-        if (msg.id === messageId) {
-          return { ...msg, rating };
-        }
-        return msg;
+      const chatRef = db.collection('chats').doc(chatId);
+      let updatedMessage = null;
+
+      await db.runTransaction(async (transaction) => {
+        const chatDoc = await transaction.get(chatRef);
+        if (!chatDoc.exists) throw new Error('Chat not found');
+
+        const chatData = chatDoc.data();
+        const messages = (chatData.messages || []).map(msg => {
+          if (msg.id === messageId) {
+            updatedMessage = { ...msg, rating };
+            return updatedMessage;
+          }
+          return msg;
+        });
+
+        transaction.update(chatRef, {
+          messages,
+          updatedAt: new Date(),
+        });
       });
 
-      await db.collection('chats').doc(chatId).update({
-        messages,
-        updatedAt: new Date(),
-      });
-
-      return messages.find(m => m.id === messageId);
+      return updatedMessage;
     } catch (error) {
       throw new Error(`Failed to rate message: ${error.message}`);
     }

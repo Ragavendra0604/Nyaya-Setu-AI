@@ -121,35 +121,48 @@ class ChatController {
         try {
           console.log('Processing attached file:', req.file.originalname);
           const mimeType = req.file.mimetype;
+          const filePath = req.file.path;
+
+          // 1. Convert to Base64 for AI engine (needed for vision/media analysis)
+          const fileBuffer = fs.readFileSync(filePath);
+          const base64Data = fileBuffer.toString('base64');
 
           if (mimeType.startsWith('image/')) {
-            imageData = fs.readFileSync(req.file.path).toString('base64');
-            enrichedQuery = query || "Please analyze this image for legal context.";
-            const extractedText = await FileProcessor.extractText(req.file);
-            enrichedQuery += `\n\n[OCR DATA]:\n${extractedText}`;
+            imageData = base64Data;
+            // Quick local OCR as backup
+            const extractedText = await FileProcessor.extractText(req.file).catch(() => "");
+            if (extractedText) enrichedQuery += `\n\n[LOCAL OCR CONTENT]:\n${extractedText}`;
           }
           else if (mimeType === 'application/pdf') {
-            pdfData = fs.readFileSync(req.file.path).toString('base64');
-            enrichedQuery = query || "Please analyze this document.";
-            let extractedText = await FileProcessor.extractText(req.file);
-            if (extractedText.length > 30000) extractedText = extractedText.substring(0, 30000) + "... [Content Truncated]";
-            enrichedQuery += `\n\n[TEXT CONTENT]:\n${extractedText}`;
+            pdfData = base64Data;
+            // Quick local PDF text extraction
+            let extractedText = await FileProcessor.extractText(req.file).catch(() => "");
+            if (extractedText) {
+              if (extractedText.length > 20000) extractedText = extractedText.substring(0, 20000) + "... [Truncated]";
+              enrichedQuery += `\n\n[LOCAL DOCUMENT CONTENT]:\n${extractedText}`;
+            }
           }
           else if (mimeType.startsWith('audio/') || mimeType === 'video/webm' || mimeType === 'application/ogg') {
-            audioData = fs.readFileSync(req.file.path).toString('base64');
+            audioData = base64Data;
             enrichedQuery = query || "Please transcribe and analyze this voice message.";
           }
           else {
-            let extractedText = await FileProcessor.extractText(req.file);
-            if (extractedText.length > 30000) {
-              extractedText = extractedText.substring(0, 30000) + "... [Content Truncated]";
+            // For other formats (DOCX, TXT), just extract text
+            let extractedText = await FileProcessor.extractText(req.file).catch(() => "");
+            if (extractedText) {
+              if (extractedText.length > 20000) extractedText = extractedText.substring(0, 20000) + "... [Truncated]";
+              enrichedQuery = `${query || "Analyze this document."}\n\n[DOCUMENT CONTENT]:\n${extractedText}`;
             }
-            enrichedQuery = `${query || "Please analyze this document."}\n\n[ATTACHED CONTENT]:\n${extractedText}`;
           }
+
+          if (!query && !audioData) {
+            enrichedQuery = enrichedQuery || `Analyzing ${req.file.originalname}`;
+          }
+
         } catch (fileErr) {
           console.error('File processing failed:', fileErr);
         } finally {
-          // Cleanup uploaded file
+          // Cleanup uploaded file IMMEDIATELY after reading into memory
           try {
             if (req.file && fs.existsSync(req.file.path)) {
               fs.unlinkSync(req.file.path);
@@ -160,6 +173,7 @@ class ChatController {
           }
         }
       }
+
 
       const isDemoMode = isDemo === true || isDemo === 'true';
 
@@ -204,7 +218,9 @@ class ChatController {
           audio_data: audioData
         };
 
-        const pythonResponse = await axios.post(`${PYTHON_API_URL}/ask`, pythonPayload);
+        const pythonResponse = await axios.post(`${PYTHON_API_URL}/ask`, pythonPayload, {
+          headers: { 'X-API-Key': process.env.AI_API_KEY }
+        });
 
         console.log('AI service responded');
         const assistantMessage = await ChatModel.addMessage(chatId, {
@@ -241,6 +257,8 @@ class ChatController {
         user_query,
         ai_response,
         mode
+      }, {
+        headers: { 'X-API-Key': process.env.AI_API_KEY }
       });
 
       res.json(aiResponse.data);
@@ -342,6 +360,8 @@ class ChatController {
       const response = await axios.post(`${PYTHON_API_URL}/tts`, {
         text,
         language
+      }, {
+        headers: { 'X-API-Key': process.env.AI_API_KEY }
       });
 
       res.json(response.data);

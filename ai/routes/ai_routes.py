@@ -3,18 +3,29 @@ from controllers.ai_controller import AIController
 
 from services.stt_service import SttService
 from services.tts_service import TtsService
+from config.settings import Settings
 
-from services.tts_service import TtsService
+from functools import wraps
 
 ai_bp = Blueprint('ai', __name__)
 stt_service = SttService()
 tts_service = TtsService()
+
+def require_api_key(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        api_key = request.headers.get('X-API-Key')
+        if not api_key or api_key != Settings.AI_API_KEY:
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 @ai_bp.route("/", methods=["GET"])
 def home():
     return jsonify({"message": "NyayaSetu AI Engine Running"}), 200
 
 @ai_bp.route("/ask", methods=["POST"])
+@require_api_key
 def ask():
     try:
         data = request.get_json()
@@ -40,7 +51,7 @@ def ask():
 
         result = AIController.get_legal_guidance(query, language, mode, image_data, pdf_data)
         
-        # 3. Generate TTS audio instantly for the response
+        # 3. Generate TTS audio instantly (Now optimized with high-speed edge-tts)
         try:
             answer_text = result.get("answer", "")
             if answer_text:
@@ -63,6 +74,7 @@ def ask():
         return jsonify({"error": str(e)}), 500
 
 @ai_bp.route("/transcribe", methods=["POST"])
+@require_api_key
 def transcribe_standalone():
     try:
         data = request.get_json()
@@ -78,6 +90,7 @@ def transcribe_standalone():
         return jsonify({"error": str(e)}), 500
 
 @ai_bp.route("/evaluate", methods=["POST"])
+@require_api_key
 def evaluate():
     try:
         data = request.get_json()
@@ -95,6 +108,7 @@ def evaluate():
         return jsonify({"error": str(e)}), 500
 
 @ai_bp.route("/tts", methods=["POST"])
+@require_api_key
 def tts():
     try:
         data = request.get_json()

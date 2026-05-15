@@ -1,6 +1,11 @@
 from services.ai_service import AIService
 from services.media_service import MediaService
+from services.rag_service import RagService
 import base64
+from concurrent.futures import ThreadPoolExecutor
+
+rag_service = RagService()
+executor = ThreadPoolExecutor(max_workers=5)
 
 class AIController:
     @staticmethod
@@ -69,32 +74,70 @@ Example format: "**Section 379 IPC / Section 303 BNSS** — Covers theft, punish
 MODE SELECTED: "{mode}"
 {mode_rules}
 """
-        # 1. NVIDIA VISION EXTRACTION
+        # 1. & 2. PARALLEL EXECUTION: Media Analysis and RAG Retrieval
+        media_future = None
         if image_data or pdf_data:
             pipeline_steps.append("🔍 Analyzing visual evidence...")
-            print("🚀 Triggering High-Fidelity Media Context Extraction...")
             media_items = []
             if image_data:
                 media_items.append({"mime_type": "image/jpeg", "data": base64.b64decode(image_data)})
             if pdf_data:
                 media_items.append({"mime_type": "application/pdf", "data": base64.b64decode(pdf_data)})
-                
-            nvidia_context = MediaService.analyze_media_context(media_items)
-            if nvidia_context:
-                pipeline_steps.append("🧠 Context extracted from media.")
-                query = f"{query}\n\n[DETAILED MEDIA CONTEXT]:\n{nvidia_context}"
+            media_future = executor.submit(MediaService.analyze_media_context, media_items)
+
+        # Start RAG search in parallel
+        print(f"🔍 RAG: Searching database for: '{query[:50]}...'")
+        pipeline_steps.append("📚 Searching legal database for precedents...")
+        rag_future = executor.submit(rag_service.query, query, n_results=2)
+
+        # Wait for results
+        if media_future:
+            try:
+                nvidia_context = media_future.result()
+                if nvidia_context:
+                    pipeline_steps.append("🧠 Context extracted from media.")
+                    query = f"{query}\n\n[DETAILED MEDIA CONTEXT]:\n{nvidia_context}"
+                else:
+                    pipeline_steps.append("ℹ️ Media analysis yielded no specific text.")
+            except Exception as media_err:
+                print(f"❌ Media Analysis Error: {media_err}")
+                pipeline_steps.append("⚠️ Media analysis skipped (Error).")
+
+        try:
+            legal_context = rag_future.result()
+            if legal_context:
+                print("📖 RAG: Found relevant legal context in local database.")
+                pipeline_steps.append("📖 Relevant legal context found.")
+                # Make it more prominent for the LLM
+                query = f"""### ⚖️ MANDATORY LEGAL REFERENCE (USE THIS TO ANSWER):
+{legal_context}
+
+---
+### 📝 USER QUESTION:
+{query}"""
+            else:
+                print("ℹ️ RAG: No specific local context found.")
+                pipeline_steps.append("ℹ️ No specific local precedents found; using general knowledge.")
+        except Exception as rag_err:
+            print(f"❌ RAG Error: {rag_err}")
+            pipeline_steps.append("⚠️ Legal database search skipped (Error).")
 
         pipeline_steps.append("⚖️ Applying Indian Law reasoning...")
+
+        # Final safety check for query
+        if not query.strip():
+            query = "Analyze the provided context and images/PDFs and provide legal guidance according to the system instructions."
 
         messages = [
             {"role": "system", "content": system_content},
             {"role": "user", "content": query}
         ]
         
+        # Keep raw media for Gemini (if it supports it)
         if image_data:
-            messages.append({"type": "image", "data": image_data})
+            messages.append({"role": "user", "type": "image", "data": image_data})
         if pdf_data:
-            messages.append({"type": "pdf", "data": pdf_data})
+            messages.append({"role": "user", "type": "pdf", "data": pdf_data})
         
         answer, model = AIService.call_ai(messages)
         pipeline_steps.append(f"✅ Analysis complete using {model}")
@@ -106,13 +149,23 @@ MODE SELECTED: "{mode}"
             "pipeline_steps": pipeline_steps
         }
 
+
     @staticmethod
     def evaluate_response(user_query, mode, ai_response):
-        evaluation_prompt = f"""You are an expert evaluator reviewing the output of an AI legal assistant called "NyayaSetu AI".
+        # 1. Use RAG to get the ground truth for verification
+        print(f"🔍 RAG Verification: Searching laws to verify AI response...")
+        legal_context = rag_service.query(user_query, n_results=3)
+        
+        evaluation_prompt = f"""You are an expert legal auditor. Verify the accuracy of the AI Response based on the provided Legal Context.
 
-User Query: {user_query}
-Mode: {mode}
-AI Response:
+### 📖 LEGAL CONTEXT (GROUND TRUTH):
+{legal_context if legal_context else "No specific context found. Use general Indian legal knowledge."}
+
+---
+### 📝 USER QUERY: 
+{user_query}
+
+### 🤖 AI RESPONSE TO VERIFY:
 {ai_response}
 
 ---
