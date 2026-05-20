@@ -447,14 +447,15 @@ export default function ChatPage({
   };
 
   const newChat = () => {
-    // If we already have an empty chat at the top, just switch to it
-    if (chats.length > 0 && chats[0].messages.length === 0 && !chats[0].chatId) {
-      setActiveChatIndex(0);
-      activeChatIndexRef.current = 0;
-      return;
-    }
-    const nextChat = { title: t("newChat"), messages: [], chatId: null, tempId: `new-chat-${Date.now()}` };
-    setChats([nextChat, ...chats]);
+    const nextChat = {
+      title: t("newChat"),
+      messages: [],
+      chatId: null,
+      tempId: `new-chat-${Date.now()}`
+    };
+
+    setChats((prev) => [nextChat, ...prev]);
+
     setActiveChatIndex(0);
     activeChatIndexRef.current = 0;
   };
@@ -635,6 +636,21 @@ export default function ChatPage({
     }
   };
 
+  useEffect(() => {
+    const query = localStorage.getItem("prefilledQuery");
+
+    if (query) {
+      setInput(query);
+
+      // optional auto-send
+      setTimeout(() => {
+        sendMessage(query);
+      }, 500);
+
+      localStorage.removeItem("prefilledQuery");
+    }
+  }, []);
+
   return (
     <div className="chat-layout">
       <aside className={`chat-sidebar ${sidebarOpen ? "open" : "closed"}`}>
@@ -757,9 +773,9 @@ export default function ChatPage({
 
         {!isDemo && (
           <div className="sidebar-bottom">
-            <button className="profile-btn-sidebar" onClick={() => setShowProfile(true)}>
-              <User size={18} /> {t("profile") || "Profile"}
-            </button>
+            {/* <button className="profile-btn-sidebar" onClick={() => setShowProfile(true)}>
+              <User size={18} /> {t("Profile") || "Profile"}
+            </button> */}
             <button className="logout-btn-sidebar" onClick={handleLogout}>
               <LogOut size={18} /> {t("logout")}
             </button>
@@ -820,7 +836,7 @@ export default function ChatPage({
         </div>
 
         <div className="chat-body">
-          {messages.length === 0 && !loading && (
+          { !isDemo && messages.length === 0 && !loading && (
             <div className="welcome-screen">
               <div className="welcome-content">
                 <div className="welcome-icon">
@@ -1117,7 +1133,7 @@ export default function ChatPage({
 
             <button
               onClick={handleVoice}
-              disabled={loading}
+              disabled={isDemo || loading}
               className={`voice-btn ${isRecording ? 'recording' : ''}`}
             >
               {isRecording ? (

@@ -142,6 +142,19 @@ function DashboardScreen({
               </button>
             </div>
 
+            <div className="desktop-sidebar-brand">
+              <div className="dashboard-brand-name">
+                <div className="dashboard-brand-mark">
+                  <img src={logo} alt="NyayaSetu AI" />
+                </div>
+
+                <div>
+                  <h2>NyayaSetu AI</h2>
+                  <small>Legal Guidance Assistant</small>
+                </div>
+              </div>
+            </div>
+
             <nav className="sidebar-nav">
 
               <button className="sidebar-link active">
@@ -152,7 +165,7 @@ function DashboardScreen({
               <button
                 className="sidebar-link"
                 onClick={() => {
-                  setIsDemo(false);
+                  setIsDemo(!isLoggedIn);
                   setShowDashboard(false);
                   setShowChat(true);
                 }}
@@ -293,7 +306,20 @@ function DashboardScreen({
                   <p>{item.body}</p>
                 </div>
 
-                <button className="dashboard-explore-button" type="button">
+                <button
+                  className="dashboard-explore-button"
+                  type="button"
+                  onClick={() => {
+                    setShowDashboard(false);
+                    setShowChat(true);
+
+                    // pass query
+                    localStorage.setItem(
+                      "prefilledQuery",
+                      item.body
+                    );
+                  }}
+                >
                   {t("exploreLabel")}
                 </button>
               </article>

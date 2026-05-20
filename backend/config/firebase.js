@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const path = require('path');
 
 // Load service account credentials from serviceAccount.json
-const serviceAccount = require(path.join(__dirname, '../serviceAccount.json'));
+const serviceAccount = require(path.join(__dirname, '../serviceAcount.json'));
 
 // Initialize Firebase Admin SDK
 admin.initializeApp({

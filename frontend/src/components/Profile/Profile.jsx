@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import './Profile.css';
-import { User, Mail, Settings, LogOut, ArrowLeft, Shield, Globe, Moon } from 'lucide-react';
+import { User, Mail, Settings, LogOut, ArrowLeft, Shield, Globe, Moon, Pencil } from 'lucide-react';
 import { auth } from '../../firebase';
 import { toast } from 'react-hot-toast';
 import i18n from 'i18next';
 
 export default function Profile({ userProfile, currentUser, onBack, onLanguageChange }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [profileImage, setProfileImage] = useState(
+      localStorage.getItem("profileImage") || null
+    );
 
   const handleLogout = () => {
     auth.signOut()
@@ -37,6 +40,25 @@ export default function Profile({ userProfile, currentUser, onBack, onLanguageCh
     toast.success(`${isDarkMode ? 'Light' : 'Dark'} mode activated (Experimental)`);
   };
 
+  const handleProfileUpload = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      setProfileImage(reader.result);
+
+      // persist
+      localStorage.setItem("profileImage", reader.result);
+
+      toast.success("Profile photo updated!");
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="profile-container">
       <div className="profile-card">
@@ -49,7 +71,26 @@ export default function Profile({ userProfile, currentUser, onBack, onLanguageCh
 
         <section className="profile-main">
           <div className="user-avatar">
-            <User size={48} />
+            <label htmlFor="profile-upload" className="avatar-upload">
+              {profileImage ? (
+                <img src={profileImage} alt="Profile" />
+              ) : (
+                <>
+                  <User size={52} />
+                  <div className="avatar-edit">
+                    <Pencil size={16} />
+                  </div>
+                </>
+              )}
+            </label>
+
+            <input
+              id="profile-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleProfileUpload}
+              hidden
+            />
           </div>
           <div className="user-info">
             <h2>{userProfile?.fullName || "NyayaSetu User"}</h2>
