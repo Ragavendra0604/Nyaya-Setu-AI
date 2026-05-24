@@ -226,3 +226,14 @@ export async function updateUserSettings(settings) {
   console.warn('updateUserSettings is deprecated. Use updateUser instead');
   return { ok: false, error: 'Use updateUser' };
 }
+export async function uploadProfileImage(uid, file) {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const response = await fetch(`${API_URL}/auth/upload-profile/${uid}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  return response.json();
+}
