@@ -4,17 +4,18 @@ class UserModel {
   static async createUser(uid, userData) {
     try {
       const user = {
-        uid,
-        email: userData.email,
-        displayName: userData.displayName || '',
-        phone: userData.phone || '',
-        language: userData.language || 'en',
-        mode: userData.mode || 'simple',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isVerified: userData.isVerified || false,
-        role: userData.role || 'citizen',
-      };
+  uid,
+  email: userData.email,
+  displayName: userData.displayName || '',
+  phone: userData.phone || '',
+  language: userData.language || 'en',
+  mode: userData.mode || 'simple',
+  profileImage: userData.profileImage || '',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  isVerified: userData.isVerified || false,
+  role: userData.role || 'citizen',
+};
       
       await db.collection('users').doc(uid).set(user);
       return user;

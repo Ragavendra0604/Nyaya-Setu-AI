@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import DashboardScreen from "./components/DashboardScreen";
 import LanguageSelectionScreen from "./components/LanguageSelectionScreen";
 import ChatPage from "./components/Chatpage";
@@ -12,7 +12,9 @@ import { auth } from "./firebase";
 import { getUser } from "./services/api";
 
 function App() {
-  const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const [selectedLanguage, setSelectedLanguage] = useState(
+    localStorage.getItem("lang") || null
+  );
 
   const [showDashboard, setShowDashboard] = useState(true);
   const [showChat, setShowChat] = useState(false);
@@ -21,50 +23,69 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
 
-  // 🔥 NEW STATES
+  // 🔥 USER STATES
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
-  // 🔥 LIFTED CHAT STATES
+  // 🔥 CHAT STATES
   const [chats, setChats] = useState([
     { chatId: null, title: "New Chat", messages: [] },
   ]);
+
   const [activeChatIndex, setActiveChatIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState("simple"); // Default mode
+  const [mode, setMode] = useState("simple");
 
-  // 🔥 Firebase Auth Listener
+  // 🔥 FIREBASE AUTH LISTENER
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+
+      // ✅ USER LOGGED IN
       if (user) {
+        console.log("Firebase user detected:", user.email);
+
         setCurrentUser(user);
         setIsLoggedIn(true);
 
         try {
           let response = await getUser(user.uid);
 
-          // If not found, wait a bit and retry (handles race condition with syncProfile)
+          // Retry once if backend profile missing
           if (!response.ok || !response.user) {
-            console.log("Profile not found, retrying in 2 seconds...");
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            console.log("Retrying profile fetch...");
+            await new Promise((resolve) => setTimeout(resolve, 1500));
             response = await getUser(user.uid);
           }
 
           if (response.ok && response.user) {
             setUserProfile(response.user);
             setMode(response.user.mode || "simple");
+
+            console.log("Backend profile loaded");
           } else {
-            console.log("User profile still not found in backend");
+            console.warn("User profile missing in backend");
           }
+
         } catch (err) {
-          console.error("Error fetching user from backend:", err);
+          console.error("Backend fetch failed:", err);
+
+          toast.error("Failed to load profile");
         }
-      } else {
+      }
+
+      // ❌ USER LOGGED OUT
+      else {
+        console.log("User logged out");
+
         setCurrentUser(null);
         setUserProfile(null);
         setIsLoggedIn(false);
-        // Reset chat states on logout
-        setChats([{ chatId: null, title: "New Chat", messages: [] }]);
+
+        // Reset chats
+        setChats([
+          { chatId: null, title: "New Chat", messages: [] },
+        ]);
+
         setActiveChatIndex(0);
         setLoading(false);
       }
@@ -73,143 +94,213 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // 🔄 Browser History Management (Back Button Support)
+  // 🔙 BACK BUTTON SUPPORT
   useEffect(() => {
     const handlePopState = () => {
+
       if (showProfile) {
         setShowProfile(false);
-      } else if (showChat) {
+      }
+
+      else if (showChat) {
         setShowChat(false);
-      } else if (showLogin) {
+      }
+
+      else if (showLogin) {
         setShowLogin(false);
-      } else if (selectedLanguage) {
+      }
+
+      else if (selectedLanguage) {
         setSelectedLanguage(null);
       }
     };
 
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [showProfile, showChat, showLogin, selectedLanguage]);
 
-  // Helper to push history state
+  // PUSH HISTORY
   const pushState = () => {
-    window.history.pushState(null, "", window.location.pathname);
+    window.history.pushState({}, "", window.location.pathname);
   };
 
-  // 🌐 Language screen
+  // 🌐 LANGUAGE SCREEN
   if (!selectedLanguage) {
     return (
       <LanguageSelectionScreen
         onSelectLanguage={(lang) => {
           localStorage.setItem("lang", lang);
           setSelectedLanguage(lang);
+
           pushState();
         }}
       />
     );
   }
 
-  // 🔐 Login screen
+  // 🔐 LOGIN SCREEN
   if (showLogin && !isLoggedIn) {
     return (
-      <Login
-        setShowLogin={setShowLogin}
-        setIsLoggedIn={setIsLoggedIn}
-      />
+      <>
+        <Toaster position="top-center" />
+
+        <Login
+          setShowLogin={setShowLogin}
+          setIsLoggedIn={setIsLoggedIn}
+        />
+      </>
     );
   }
 
-  // 👤 Profile screen
+  // 👤 PROFILE SCREEN
   if (showProfile && isLoggedIn) {
     return (
-      <Profile
-        userProfile={userProfile}
-        currentUser={currentUser}
-        onBack={() => window.history.back()}
-        onLanguageChange={(lang) => {
-          localStorage.setItem("lang", lang);
-          setSelectedLanguage(lang);
-        }}
-      />
+      <>
+        <Toaster position="top-center" />
+
+        <Profile
+  userProfile={userProfile}
+  setUserProfile={setUserProfile}
+  currentUser={currentUser}
+          onBack={() => window.history.back()}
+          onLanguageChange={(lang) => {
+            localStorage.setItem("lang", lang);
+            setSelectedLanguage(lang);
+          }}
+        />
+      </>
     );
   }
 
-  // 💬 Chat screen
+  // 💬 CHAT SCREEN
   if (showChat) {
     return (
-      <ChatPage
-        selectedLanguage={selectedLanguage}
-        isDemo={isDemo}
-        setShowChat={(val) => {
-          if (!val) window.history.back();
-          else setShowChat(true);
-        }}
-        setShowProfile={setShowProfile}
-        currentUser={currentUser}
-        userProfile={userProfile}
-        // Lifted states
-        chats={chats}
-        setChats={setChats}
-        activeChatIndex={activeChatIndex}
-        setActiveChatIndex={setActiveChatIndex}
-        loading={loading}
-        setLoading={setLoading}
-        mode={mode}
-        setMode={setMode}
-      />
+      <>
+        <Toaster position="top-center" />
+
+        <ChatPage
+          selectedLanguage={selectedLanguage}
+          isDemo={isDemo}
+          setShowChat={(val) => {
+
+            if (!val) {
+              window.history.back();
+            } else {
+              setShowChat(true);
+            }
+          }}
+          setShowProfile={setShowProfile}
+          currentUser={currentUser}
+          userProfile={userProfile}
+
+          chats={chats}
+          setChats={setChats}
+
+          activeChatIndex={activeChatIndex}
+          setActiveChatIndex={setActiveChatIndex}
+
+          loading={loading}
+          setLoading={setLoading}
+
+          mode={mode}
+          setMode={setMode}
+        />
+      </>
     );
   }
 
-  // 🏠 Dashboard
+  // 🏠 DASHBOARD
   return (
     <>
       <Toaster
         position="top-center"
         toastOptions={{
           style: {
-            background: '#1a1a1a',
-            color: '#fff',
-            border: '1px solid #2ecc71',
+            background: "#1a1a1a",
+            color: "#fff",
+            border: "1px solid #2ecc71",
           },
+
           success: {
             iconTheme: {
-              primary: '#2ecc71',
-              secondary: '#fff',
+              primary: "#2ecc71",
+              secondary: "#fff",
+            },
+          },
+
+          error: {
+            iconTheme: {
+              primary: "#ff4b4b",
+              secondary: "#fff",
             },
           },
         }}
       />
+
       <DashboardScreen
         selectedLanguage={selectedLanguage}
+
         onSelectLanguage={(lang) => {
           localStorage.setItem("lang", lang);
           setSelectedLanguage(lang);
         }}
+
         setShowDashboard={setShowDashboard}
+
         setShowChat={(val) => {
+
           if (val) {
-            // Only add a new chat if the current top chat is not already empty/new
+
             const topChat = chats[0];
-            const isTopEmpty = topChat && !topChat.chatId && (!topChat.messages || topChat.messages.length === 0);
+
+            const isTopEmpty =
+              topChat &&
+              !topChat.chatId &&
+              (!topChat.messages ||
+                topChat.messages.length === 0);
 
             if (!isTopEmpty) {
-              setChats([{ chatId: null, title: "New Chat", messages: [] }, ...chats]);
+              setChats([
+                {
+                  chatId: null,
+                  title: "New Chat",
+                  messages: [],
+                },
+                ...chats,
+              ]);
+
               setActiveChatIndex(0);
             } else {
               setActiveChatIndex(0);
             }
           }
+
           setShowChat(val);
-          if (val) pushState();
+
+          if (val) {
+            pushState();
+          }
         }}
+
         setShowLogin={(val) => {
           setShowLogin(val);
-          if (val) pushState();
+
+          if (val) {
+            pushState();
+          }
         }}
+
         setShowProfile={(val) => {
           setShowProfile(val);
-          if (val) pushState();
+
+          if (val) {
+            pushState();
+          }
         }}
+
         isLoggedIn={isLoggedIn}
         setIsDemo={setIsDemo}
         setIsLoggedIn={setIsLoggedIn}

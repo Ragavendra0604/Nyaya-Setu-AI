@@ -4,12 +4,31 @@ import { User, Mail, Settings, LogOut, ArrowLeft, Shield, Globe, Moon, Pencil } 
 import { auth } from '../../firebase';
 import { toast } from 'react-hot-toast';
 import i18n from 'i18next';
+import Cropper from 'react-easy-crop';
 
-export default function Profile({ userProfile, currentUser, onBack, onLanguageChange }) {
+export default function Profile({
+  userProfile,
+  setUserProfile,
+  currentUser,
+  onBack,
+  onLanguageChange
+}) {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [profileImage, setProfileImage] = useState(
-      localStorage.getItem("profileImage") || null
-    );
+  const [profileImage, setProfileImage] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  
+
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  const [imageSrc, setImageSrc] = useState(null);
+
+  const [showCropper, setShowCropper] = useState(false);
+
+React.useEffect(() => {
+  if (userProfile?.profileImage) {
+    setProfileImage(userProfile.profileImage);
+  }
+}, [userProfile]);
 
   const handleLogout = () => {
     auth.signOut()
@@ -40,25 +59,179 @@ export default function Profile({ userProfile, currentUser, onBack, onLanguageCh
     toast.success(`${isDarkMode ? 'Light' : 'Dark'} mode activated (Experimental)`);
   };
 
-  const handleProfileUpload = (e) => {
-    const file = e.target.files[0];
 
-    if (!file) return;
 
-    const reader = new FileReader();
+const handleCropComplete = (_, croppedPixels) => {
+  setCroppedAreaPixels(croppedPixels);
+};
 
-    reader.onloadend = () => {
-      setProfileImage(reader.result);
+const handleProfileUpload = async (e) => {
+  const file = e.target.files[0];
 
-      // persist
-      localStorage.setItem("profileImage", reader.result);
+  if (!file) return;
+
+  const imageUrl = URL.createObjectURL(file);
+
+  setImageSrc(imageUrl);
+  setCrop({ x: 0, y: 0 });
+  
+
+  setShowCropper(true);
+};
+const uploadCroppedImage = async () => {
+  try {
+    const croppedBlob = await getCroppedImg(
+      imageSrc,
+      croppedAreaPixels
+    );
+
+    const formData = new FormData();
+
+    formData.append(
+      "image",
+      croppedBlob,
+      "profile.jpg"
+    );
+
+    const response = await fetch(
+      `http://localhost:5000/api/auth/upload-profile/${currentUser.uid}`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.ok) {
+      setProfileImage(data.imageUrl);
+
+      setUserProfile((prev) => ({
+        ...prev,
+        profileImage: data.imageUrl,
+      }));
 
       toast.success("Profile photo updated!");
-    };
 
-    reader.readAsDataURL(file);
-  };
+      setShowCropper(false);
 
+    } else {
+      toast.error(data.error || "Upload failed");
+    }
+
+  } catch (error) {
+    console.error(error);
+
+    toast.error("Image upload failed");
+  }
+};
+
+const createImage = (url) =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+
+    image.addEventListener('load', () => resolve(image));
+
+    image.addEventListener('error', (error) => reject(error));
+
+    image.setAttribute('crossOrigin', 'anonymous');
+
+    image.src = url;
+  });
+
+const getCroppedImg = async (imageSrc, cropPixels) => {
+  const image = await createImage(imageSrc);
+
+  const canvas = document.createElement("canvas");
+
+  const size = Math.min(
+    cropPixels.width,
+    cropPixels.height
+  );
+
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext("2d");
+
+  // Create circular clipping mask
+  ctx.beginPath();
+
+  ctx.arc(
+    size / 2,
+    size / 2,
+    size / 2,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.closePath();
+
+  ctx.clip();
+
+  // Draw correct cropped portion
+  ctx.drawImage(
+    image,
+    cropPixels.x,
+    cropPixels.y,
+    size,
+    size,
+    0,
+    0,
+    size,
+    size
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      (blob) => {
+        resolve(blob);
+      },
+      "image/png"
+    );
+  });
+};
+
+if (showCropper) {
+  return (
+    <div className="cropper-container">
+
+      <div className="cropper-box">
+
+        <Cropper
+          image={imageSrc}
+          crop={crop}
+          aspect={1}
+          cropShape="round"
+          showGrid={false}
+          onCropChange={setCrop}
+          onCropComplete={handleCropComplete}
+        />
+
+        <div className="crop-controls">
+
+  
+
+  <button onClick={uploadCroppedImage}>
+    Save Profile Picture
+  </button>
+
+  <button
+    onClick={() => {
+      setShowCropper(false);
+      setImageSrc(null);
+    }}
+  >
+    Cancel
+  </button>
+
+</div>
+
+      </div>
+
+    </div>
+  );
+}
   return (
     <div className="profile-container">
       <div className="profile-card">
@@ -93,7 +266,7 @@ export default function Profile({ userProfile, currentUser, onBack, onLanguageCh
             />
           </div>
           <div className="user-info">
-            <h2>{userProfile?.fullName || "NyayaSetu User"}</h2>
+            <h2>{userProfile?.displayName || "NyayaSetu User"}</h2>
             <p><Mail size={14} /> {currentUser?.email || currentUser?.phoneNumber || "No email provided"}</p>
           </div>
         </section>

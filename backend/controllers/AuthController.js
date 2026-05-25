@@ -1,5 +1,7 @@
 const { auth } = require('../config/firebase');
 const UserModel = require('../models/User');
+const cloudinary = require('../config/cloudinary');
+const fs = require('fs');
 
 class AuthController {
   static async signup(req, res) {
@@ -149,6 +151,35 @@ class AuthController {
       res.status(401).json({ error: 'Invalid token' });
     }
   }
+  static async uploadProfileImage(req, res) {
+  try {
+    const { uid } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'nyayasetu_profiles',
+    });
+
+    fs.unlinkSync(req.file.path);
+
+    const updatedUser = await UserModel.updateUser(uid, {
+      profileImage: result.secure_url,
+    });
+
+    res.json({
+      ok: true,
+      imageUrl: result.secure_url,
+      user: updatedUser,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+}
 }
 
 module.exports = AuthController;
