@@ -4,8 +4,8 @@ import hindiBanner from '../assets/hindi_banner.jpeg';
 import tamBanner from '../assets/tam_banner.jpeg';
 import logo from '../assets/app_logo.jpeg';
 import {
-  Scale, Languages, Sparkles, HelpCircle, MessageSquare,
-  Mic, Lightbulb, ClipboardList, Users, Handshake, User, Menu, X 
+  Scale, Languages, Sparkles, MessageSquare,
+  Mic, Lightbulb, ClipboardList, Users, Handshake, User, Menu, X
 } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
@@ -28,7 +28,7 @@ function DashboardScreen({
   setShowProfile,
   setIsLoggedIn
 }) {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation();
 
   const selectedBanner = bannerByLanguage[selectedLanguage] ?? engBanner;
 
@@ -46,41 +46,41 @@ function DashboardScreen({
       setShowDashboard(false);
       setShowChat(true);
     }
-  }
+  };
 
   const features = [
     {
       icon: <Languages className="w-6 h-6" />,
-      title: t("features.multilingual.title"),
-      body: t("features.multilingual.body"),
+      title: t("dashboard.features.multilingual.title"),
+      body: t("dashboard.features.multilingual.body"),
     },
     {
       icon: <Mic className="w-6 h-6" />,
-      title: t("features.voice.title"),
-      body: t("features.voice.body"),
+      title: t("dashboard.features.voice.title"),
+      body: t("dashboard.features.voice.body"),
     },
     {
       icon: <Lightbulb className="w-6 h-6" />,
-      title: t("features.simple.title"),
-      body: t("features.simple.body"),
+      title: t("dashboard.features.simple.title"),
+      body: t("dashboard.features.simple.body"),
     },
   ];
 
   const practicalItems = [
     {
       icon: <ClipboardList className="w-6 h-6" />,
-      title: t("practical.fir.title"),
-      body: t("practical.fir.body"),
+      title: t("dashboard.practical.fir.title"),
+      body: t("dashboard.practical.fir.body"),
     },
     {
       icon: <Users className="w-6 h-6" />,
-      title: t("practical.legalAid.title"),
-      body: t("practical.legalAid.body"),
+      title: t("dashboard.practical.legalAid.title"),
+      body: t("dashboard.practical.legalAid.body"),
     },
     {
       icon: <Handshake className="w-6 h-6" />,
-      title: t("practical.tenant.title"),
-      body: t("practical.tenant.body"),
+      title: t("dashboard.practical.tenant.title"),
+      body: t("dashboard.practical.tenant.body"),
     },
   ];
 
@@ -115,13 +115,8 @@ function DashboardScreen({
           />
         )}
 
-        <aside
-          className={`dashboard-sidebar ${
-            mobileMenuOpen ? "mobile-open" : ""
-          }`}
-        >
+        <aside className={`dashboard-sidebar ${mobileMenuOpen ? "mobile-open" : ""}`}>
           <div className="sidebar-inner">
-
             <div className="mobile-sidebar-top">
               <div className="dashboard-brand-name">
                 <div className="dashboard-brand-mark">
@@ -156,7 +151,6 @@ function DashboardScreen({
             </div>
 
             <nav className="sidebar-nav">
-
               <button className="sidebar-link active">
                 <Scale size={19} />
                 <span>Dashboard</span>
@@ -202,13 +196,10 @@ function DashboardScreen({
                   className="logout-btn"
                   onClick={() => {
                     localStorage.removeItem("token");
-
                     setIsLoggedIn(false);
-
                     setShowProfile(false);
                     setShowChat(false);
                     setShowLogin(false);
-
                     setShowDashboard(true);
                     setIsDemo(false);
                   }}
@@ -236,47 +227,44 @@ function DashboardScreen({
           <div className="hero-split">
             <div className="hero-left">
               <span className="badge">
-                <Scale size={16} /> {t("guideBadge")}
+                <Scale size={16} /> {t("dashboard.guideBadge")}
               </span>
 
-              <h1>{t("heroTitle")}</h1>
-
-              <p>{t("heroDescription")}</p>
+              <h1>{t("dashboard.heroTitle")}</h1>
+              <p>{t("dashboard.heroDescription")}</p>
 
               <div className="actions">
                 <button
                   className="primary"
                   onClick={() => handleClick('primary')}
                 >
-                  <MessageSquare size={19} /> {t("primaryAction")}
+                  <MessageSquare size={19} /> {t("dashboard.primaryAction")}
                 </button>
 
-                {!isLoggedIn ?
-                  (
-                    <button
-                      className="secondary"
-                      onClick={() => {
-                        handleClick('secondary');
-                        setIsDemo(true);
-                      }}
-                    >
-                      <Sparkles size={19} /> {t("secondaryAction")}
-                    </button>
-                  ) : null
-                }
+                {!isLoggedIn && (
+                  <button
+                    className="secondary"
+                    onClick={() => {
+                      handleClick('secondary');
+                      setIsDemo(true);
+                    }}
+                  >
+                    <Sparkles size={19} /> {t("dashboard.secondaryAction")}
+                  </button>
+                )}
               </div>
             </div>
 
             <div className="hero-right">
-              <img src={selectedBanner} alt={t("visualTitle")} />
+              <img src={selectedBanner} alt={t("dashboard.visualTitle")} />
             </div>
           </div>
         </div>
 
         <section className="feature-section-card">
           <div className="feature-header">
-            <h2>{t("sectionTitle")}</h2>
-            <p>{t("sectionSubtitle")}</p>
+            <h2>{t("dashboard.sectionTitle")}</h2>
+            <p>{t("dashboard.sectionSubtitle")}</p>
           </div>
 
           <div className="dashboard-feature-grid">
@@ -292,8 +280,8 @@ function DashboardScreen({
 
         <section className="practical-section-card">
           <div className="practical-header">
-            <h2>{t("practicalTitle")}</h2>
-            <p>{t("practicalSubtitle")}</p>
+            <h2>{t("dashboard.practicalTitle")}</h2>
+            <p>{t("dashboard.practicalSubtitle")}</p>
           </div>
 
           <div className="dashboard-practical-list">
@@ -312,22 +300,17 @@ function DashboardScreen({
                   onClick={() => {
                     setShowDashboard(false);
                     setShowChat(true);
-
-                    // pass query
-                    localStorage.setItem(
-                      "prefilledQuery",
-                      item.body
-                    );
+                    localStorage.setItem("prefilledQuery", item.body);
                   }}
                 >
-                  {t("exploreLabel")}
+                  {t("dashboard.exploreLabel")}
                 </button>
               </article>
             ))}
           </div>
         </section>
       </section>
-    </main >
+    </main>
   );
 }
 

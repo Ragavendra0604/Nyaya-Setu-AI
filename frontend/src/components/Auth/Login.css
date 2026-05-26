@@ -287,3 +287,17 @@ label {
     font-size: 0.85rem;
   }
 }
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-primary:disabled {
+  background: #777 !important;
+  border-color: #777 !important;
+}
+
+.login-secondary:disabled {
+  background: #444 !important;
+  border-color: #444 !important;
+}

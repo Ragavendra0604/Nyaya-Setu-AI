@@ -1,37 +1,47 @@
-import React, { useState } from 'react';
-import './Profile.css';
-import { User, Mail, Settings, LogOut, ArrowLeft, Shield, Globe, Moon, Pencil } from 'lucide-react';
-import { auth } from '../../firebase';
-import { toast } from 'react-hot-toast';
-import i18n from 'i18next';
-import Cropper from 'react-easy-crop';
+import React, { useState } from "react";
+import "./Profile.css";
+import {
+  User,
+  Mail,
+  LogOut,
+  ArrowLeft,
+  Shield,
+  Globe,
+  Moon,
+  Pencil,
+} from "lucide-react";
+import { auth } from "../../firebase";
+import { toast } from "react-hot-toast";
+import i18n from "i18next";
+import Cropper from "react-easy-crop";
+import { uploadProfileImage } from "../../services/api";
 
 export default function Profile({
   userProfile,
   setUserProfile,
   currentUser,
   onBack,
-  onLanguageChange
+  onLanguageChange,
 }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+
   const [crop, setCrop] = useState({ x: 0, y: 0 });
-  
-
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-
   const [imageSrc, setImageSrc] = useState(null);
-
   const [showCropper, setShowCropper] = useState(false);
 
-React.useEffect(() => {
-  if (userProfile?.profileImage) {
-    setProfileImage(userProfile.profileImage);
-  }
-}, [userProfile]);
+  const [profileImageUploading, setProfileImageUploading] = useState(false);
+
+  React.useEffect(() => {
+    if (userProfile?.profileImage) {
+      setProfileImage(userProfile.profileImage);
+    }
+  }, [userProfile]);
 
   const handleLogout = () => {
-    auth.signOut()
+    auth
+      .signOut()
       .then(() => {
         toast.success("Logged out successfully");
       })
@@ -41,13 +51,25 @@ React.useEffect(() => {
   };
 
   const handleLanguageChange = () => {
-    const langs = ['en', 'hi', 'ta'];
-    const currentLang = i18n.language || 'en';
+    const langs = ["en", "hi", "ta"];
+    const currentLang = i18n.language || "en";
     const nextLang = langs[(langs.indexOf(currentLang) + 1) % langs.length];
-    
+
     i18n.changeLanguage(nextLang);
-    if (onLanguageChange) onLanguageChange(nextLang);
-    toast.success(`Language changed to ${nextLang === 'en' ? 'English' : nextLang === 'hi' ? 'Hindi' : 'Tamil'}`);
+
+    if (onLanguageChange) {
+      onLanguageChange(nextLang);
+    }
+
+    toast.success(
+      `Language changed to ${
+        nextLang === "en"
+          ? "English"
+          : nextLang === "hi"
+          ? "Hindi"
+          : "Tamil"
+      }`
+    );
   };
 
   const handleSecurityClick = () => {
@@ -56,182 +78,148 @@ React.useEffect(() => {
 
   const handleThemeToggle = () => {
     setIsDarkMode(!isDarkMode);
-    toast.success(`${isDarkMode ? 'Light' : 'Dark'} mode activated (Experimental)`);
+    toast.success(`${isDarkMode ? "Light" : "Dark"} mode activated (Experimental)`);
   };
 
+  const handleCropComplete = (_, croppedPixels) => {
+    setCroppedAreaPixels(croppedPixels);
+  };
 
+  const handleProfileUpload = async (e) => {
+    const file = e.target.files[0];
 
-const handleCropComplete = (_, croppedPixels) => {
-  setCroppedAreaPixels(croppedPixels);
-};
+    if (!file) return;
 
-const handleProfileUpload = async (e) => {
-  const file = e.target.files[0];
+    const imageUrl = URL.createObjectURL(file);
 
-  if (!file) return;
+    setImageSrc(imageUrl);
+    setCrop({ x: 0, y: 0 });
+    setShowCropper(true);
+  };
 
-  const imageUrl = URL.createObjectURL(file);
-
-  setImageSrc(imageUrl);
-  setCrop({ x: 0, y: 0 });
-  
-
-  setShowCropper(true);
-};
-const uploadCroppedImage = async () => {
-  try {
-    const croppedBlob = await getCroppedImg(
-      imageSrc,
-      croppedAreaPixels
-    );
-
-    const formData = new FormData();
-
-    formData.append(
-      "image",
-      croppedBlob,
-      "profile.jpg"
-    );
-
-    const response = await fetch(
-      `http://localhost:5000/api/auth/upload-profile/${currentUser.uid}`,
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
-
-    const data = await response.json();
-
-    if (data.ok) {
-      setProfileImage(data.imageUrl);
-
-      setUserProfile((prev) => ({
-        ...prev,
-        profileImage: data.imageUrl,
-      }));
-
-      toast.success("Profile photo updated!");
-
-      setShowCropper(false);
-
-    } else {
-      toast.error(data.error || "Upload failed");
+  const uploadCroppedImage = async () => {
+    if (!croppedAreaPixels || !imageSrc) {
+      toast.error("Please select and crop an image first");
+      return;
     }
 
-  } catch (error) {
-    console.error(error);
+    try {
+      setProfileImageUploading(true);
 
-    toast.error("Image upload failed");
-  }
-};
+      const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
 
-const createImage = (url) =>
-  new Promise((resolve, reject) => {
-    const image = new Image();
+      const data = await uploadProfileImage(currentUser.uid, croppedBlob);
 
-    image.addEventListener('load', () => resolve(image));
+      if (data.ok) {
+        setProfileImage(data.imageUrl);
 
-    image.addEventListener('error', (error) => reject(error));
+        setUserProfile((prev) => ({
+          ...prev,
+          profileImage: data.imageUrl,
+        }));
 
-    image.setAttribute('crossOrigin', 'anonymous');
+        toast.success("Profile photo updated!");
 
-    image.src = url;
-  });
+        setShowCropper(false);
+        setImageSrc(null);
+      } else {
+        toast.error(data.error || "Upload failed");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Image upload failed");
+    } finally {
+      setProfileImageUploading(false);
+    }
+  };
 
-const getCroppedImg = async (imageSrc, cropPixels) => {
-  const image = await createImage(imageSrc);
+  const createImage = (url) =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
 
-  const canvas = document.createElement("canvas");
+      image.addEventListener("load", () => resolve(image));
+      image.addEventListener("error", (error) => reject(error));
 
-  const size = Math.min(
-    cropPixels.width,
-    cropPixels.height
-  );
+      image.setAttribute("crossOrigin", "anonymous");
+      image.src = url;
+    });
 
-  canvas.width = size;
-  canvas.height = size;
+  const getCroppedImg = async (imageSrc, cropPixels) => {
+    const image = await createImage(imageSrc);
 
-  const ctx = canvas.getContext("2d");
+    const canvas = document.createElement("canvas");
 
-  // Create circular clipping mask
-  ctx.beginPath();
+    const size = Math.min(cropPixels.width, cropPixels.height);
 
-  ctx.arc(
-    size / 2,
-    size / 2,
-    size / 2,
-    0,
-    Math.PI * 2
-  );
+    canvas.width = size;
+    canvas.height = size;
 
-  ctx.closePath();
+    const ctx = canvas.getContext("2d");
 
-  ctx.clip();
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
 
-  // Draw correct cropped portion
-  ctx.drawImage(
-    image,
-    cropPixels.x,
-    cropPixels.y,
-    size,
-    size,
-    0,
-    0,
-    size,
-    size
-  );
-
-  return new Promise((resolve) => {
-    canvas.toBlob(
-      (blob) => {
-        resolve(blob);
-      },
-      "image/png"
+    ctx.drawImage(
+      image,
+      cropPixels.x,
+      cropPixels.y,
+      size,
+      size,
+      0,
+      0,
+      size,
+      size
     );
-  });
-};
 
-if (showCropper) {
-  return (
-    <div className="cropper-container">
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          resolve(blob);
+        },
+        "image/png"
+      );
+    });
+  };
 
-      <div className="cropper-box">
+  if (showCropper) {
+    return (
+      <div className="cropper-container">
+        <div className="cropper-box">
+          <Cropper
+            image={imageSrc}
+            crop={crop}
+            aspect={1}
+            cropShape="round"
+            showGrid={false}
+            onCropChange={setCrop}
+            onCropComplete={handleCropComplete}
+          />
 
-        <Cropper
-          image={imageSrc}
-          crop={crop}
-          aspect={1}
-          cropShape="round"
-          showGrid={false}
-          onCropChange={setCrop}
-          onCropComplete={handleCropComplete}
-        />
+          <div className="crop-controls">
+            <button
+              onClick={uploadCroppedImage}
+              disabled={profileImageUploading}
+            >
+              {profileImageUploading ? "Uploading..." : "Save Profile Picture"}
+            </button>
 
-        <div className="crop-controls">
-
-  
-
-  <button onClick={uploadCroppedImage}>
-    Save Profile Picture
-  </button>
-
-  <button
-    onClick={() => {
-      setShowCropper(false);
-      setImageSrc(null);
-    }}
-  >
-    Cancel
-  </button>
-
-</div>
-
+            <button
+              disabled={profileImageUploading}
+              onClick={() => {
+                setShowCropper(false);
+                setImageSrc(null);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
+    );
+  }
 
-    </div>
-  );
-}
   return (
     <div className="profile-container">
       <div className="profile-card">
@@ -239,6 +227,7 @@ if (showCropper) {
           <button className="back-btn" onClick={onBack}>
             <ArrowLeft size={20} />
           </button>
+
           <h1>Your Profile</h1>
         </header>
 
@@ -262,12 +251,19 @@ if (showCropper) {
               type="file"
               accept="image/*"
               onChange={handleProfileUpload}
+              disabled={profileImageUploading}
               hidden
             />
           </div>
+
           <div className="user-info">
             <h2>{userProfile?.displayName || "NyayaSetu User"}</h2>
-            <p><Mail size={14} /> {currentUser?.email || currentUser?.phoneNumber || "No email provided"}</p>
+            <p>
+              <Mail size={14} />{" "}
+              {currentUser?.email ||
+                currentUser?.phoneNumber ||
+                "No email provided"}
+            </p>
           </div>
         </section>
 
@@ -275,15 +271,28 @@ if (showCropper) {
 
         <section className="profile-settings">
           <div className="setting-item" onClick={handleLanguageChange}>
-            <div className="setting-icon"><Globe size={20} /></div>
+            <div className="setting-icon">
+              <Globe size={20} />
+            </div>
+
             <div className="setting-content">
               <h3>Language</h3>
-              <p>{i18n.language === 'hi' ? 'Hindi' : i18n.language === 'ta' ? 'Tamil' : 'English'} (Click to change)</p>
+              <p>
+                {i18n.language === "hi"
+                  ? "Hindi"
+                  : i18n.language === "ta"
+                  ? "Tamil"
+                  : "English"}{" "}
+                (Click to change)
+              </p>
             </div>
           </div>
 
           <div className="setting-item" onClick={handleSecurityClick}>
-            <div className="setting-icon"><Shield size={20} /></div>
+            <div className="setting-icon">
+              <Shield size={20} />
+            </div>
+
             <div className="setting-content">
               <h3>Account Security</h3>
               <p>Password & Protection</p>
@@ -291,12 +300,16 @@ if (showCropper) {
           </div>
 
           <div className="setting-item" onClick={handleThemeToggle}>
-            <div className="setting-icon"><Moon size={20} /></div>
+            <div className="setting-icon">
+              <Moon size={20} />
+            </div>
+
             <div className="setting-content">
               <h3>Theme</h3>
-              <p>{isDarkMode ? 'Dark' : 'Light'} Mode</p>
+              <p>{isDarkMode ? "Dark" : "Light"} Mode</p>
             </div>
-            <div className={`setting-toggle ${isDarkMode ? 'active' : ''}`}></div>
+
+            <div className={`setting-toggle ${isDarkMode ? "active" : ""}`}></div>
           </div>
         </section>
 
