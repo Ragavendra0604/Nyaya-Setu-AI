@@ -5,9 +5,12 @@ import { toast } from "react-hot-toast";
 import "./Login.css";
 import logo from "../../assets/app_logo.jpeg";
 
-import { 
-  ArrowLeftCircle, UserRound, Mail, 
-  LockKeyhole, ArrowRight 
+import {
+  ArrowLeftCircle,
+  UserRound,
+  Mail,
+  LockKeyhole,
+  ArrowRight,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -19,113 +22,148 @@ export default function Signup({ setShowSignUp }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const [signupLoading, setSignupLoading] = useState(false);
 
-  const { t } = useTranslation("auth");
+  const { t } = useTranslation();
 
   const handleSignUp = async () => {
-  if (!fullName || !email || !password || !confirmPassword) {
-    toast.error("Please fill all fields");
-    return;
-  }
+    if (signupLoading) return;
 
-  if (password !== confirmPassword) {
-    toast.error("Passwords do not match");
-    return;
-  }
+    if (!fullName || !email || !password || !confirmPassword) {
+      toast.error("Please fill all fields");
+      return;
+    }
 
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
 
-    await updateProfile(userCredential.user, {
-      displayName: fullName,
-    });
+    try {
+      setSignupLoading(true);
 
-    await syncProfile({
-      uid: userCredential.user.uid,
-      email: email,
-      displayName: fullName,
-      language: localStorage.getItem("lang") || "en",
-      mode: "simple",
-    });
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-    toast.success("Account created successfully");
-    setShowSignUp(false);
-  } catch (error) {
-    toast.error(error.message);
-  }
-};
+      await updateProfile(userCredential.user, {
+        displayName: fullName,
+      });
+
+      await syncProfile({
+        uid: userCredential.user.uid,
+        email: email,
+        displayName: fullName,
+        language: localStorage.getItem("lang") || "en",
+        mode: "simple",
+      });
+
+      toast.success("Account created successfully");
+      setShowSignUp(false);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setSignupLoading(false);
+    }
+  };
 
   return (
     <div className="login-screen">
       <div className="login-card">
         <div
-            className="back-btn chat-back-btn"
-            onClick={() => setShowSignUp(false)}
-          >
-            <ArrowLeftCircle />
+          className="back-btn chat-back-btn"
+          onClick={() => {
+            if (!signupLoading) {
+              setShowSignUp(false);
+            }
+          }}
+        >
+          <ArrowLeftCircle />
         </div>
+
         <div className="brand-badge">
           <img src={logo} alt="NyayaSetu Logo" />
         </div>
 
-        <h1>{t("title")}</h1>
-        <p className="login-subtitle">{t("subtitle")}</p>
+        <h1>{t("auth.title")}</h1>
+        <p className="login-subtitle">{t("auth.subtitle")}</p>
 
-        <label>{t("fullName")}</label>
+        <label>{t("auth.fullName")}</label>
         <div className="input-group">
           <UserRound className="input-icon" size={18} />
           <input
             type="text"
-            placeholder={t("fullNamePlaceholder")}
+            placeholder={t("auth.fullNamePlaceholder")}
             value={fullName}
+            disabled={signupLoading}
             onChange={(e) => setFullName(e.target.value)}
           />
         </div>
 
-        <label>{t("email")}</label>
+        <label>{t("auth.email")}</label>
         <div className="input-group">
           <Mail className="input-icon" size={18} />
-          <input 
-            type="email" placeholder={t("emailPlaceholder")} 
+          <input
+            type="email"
+            placeholder={t("auth.emailPlaceholder")}
             value={email}
+            disabled={signupLoading}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
-        <label>{t("password")}</label>
+        <label>{t("auth.password")}</label>
         <div className="input-group">
           <LockKeyhole className="input-icon" size={18} />
-          <input 
-            type="password" 
-            placeholder={t("passwordPlaceholder")} 
+          <input
+            type="password"
+            placeholder={t("auth.passwordPlaceholder")}
             value={password}
+            disabled={signupLoading}
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
-        <label>{t("confirmPassword")}</label>
+        <label>{t("auth.confirmPassword")}</label>
         <div className="input-group">
           <LockKeyhole className="input-icon" size={18} />
-          <input 
-            type="password" 
-            placeholder={t("confirmPasswordPlaceholder")} 
+          <input
+            type="password"
+            placeholder={t("auth.confirmPasswordPlaceholder")}
             value={confirmPassword}
+            disabled={signupLoading}
             onChange={(e) => setConfirmPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSignUp();
+              }
+            }}
           />
         </div>
 
-        <button className="login-primary" onClick={handleSignUp}>
-          {t("createAccount")} <ArrowRight size={18} />
+        <button
+          className="login-primary"
+          onClick={handleSignUp}
+          disabled={signupLoading}
+        >
+          {signupLoading ? "Creating account..." : t("auth.createAccount")}
+          <ArrowRight size={18} />
         </button>
 
         <p className="login-footer">
-          {t("already")} <span onClick={() => setShowSignUp(false)}>{t("signIn")}</span>
+          {t("auth.already")}{" "}
+          <span
+            onClick={() => {
+              if (!signupLoading) {
+                setShowSignUp(false);
+              }
+            }}
+          >
+            {t("auth.signIn")}
+          </span>
         </p>
-
       </div>
     </div>
   );

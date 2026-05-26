@@ -3,13 +3,17 @@ import { auth } from "../../firebase";
 import { toast } from "react-hot-toast";
 import "./Login.css";
 import logo from "../../assets/app_logo.jpeg";
-import { KeyRound, ArrowLeftCircle, UserRoundIcon, LockKeyhole, ArrowRight } from 'lucide-react';
+import {
+  KeyRound,
+  ArrowLeftCircle,
+  UserRoundIcon,
+  LockKeyhole,
+  ArrowRight,
+} from "lucide-react";
 import { useState } from "react";
 import Signup from "./SignUp";
 import Forgot from "./Forgot";
 import LoginWithOTP from "./LoginWithOTP";
-
-import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 
 export default function Login({ setShowLogin, setIsLoggedIn }) {
@@ -19,43 +23,44 @@ export default function Login({ setShowLogin, setIsLoggedIn }) {
   const [showSignUp, setShowSignUp] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
 
-  const { t } = useTranslation("login");
+  const { t } = useTranslation();
 
   const handleLogin = async () => {
+    if (loginLoading) return;
+
     if (!email || !password) {
       toast.error("Please enter email and password");
       return;
     }
 
     try {
+      setLoginLoading(true);
+
       await signInWithEmailAndPassword(auth, email, password);
+
       toast.success("Login successful");
       setIsLoggedIn(true);
       setShowLogin(false);
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setLoginLoading(false);
     }
   };
 
   const handleOtpLogin = () => {
+    if (loginLoading) return;
     setShowOTP(true);
   };
 
   if (showForgot) {
-    return (
-      <Forgot
-        setShowForgot={setShowForgot}
-      />
-    );
+    return <Forgot setShowForgot={setShowForgot} />;
   }
 
   if (showSignUp) {
-    return (
-      <Signup
-        setShowSignUp={setShowSignUp}
-      />
-    );
+    return <Signup setShowSignUp={setShowSignUp} />;
   }
 
   if (showOTP) {
@@ -73,36 +78,46 @@ export default function Login({ setShowLogin, setIsLoggedIn }) {
       <div className="login-card">
         <div
           className="back-btn"
-          onClick={() => setShowLogin(false)}
+          onClick={() => {
+            if (!loginLoading) {
+              setShowLogin(false);
+            }
+          }}
         >
           <ArrowLeftCircle />
         </div>
+
         <div className="brand-badge">
           <img src={logo} alt="NyayaSetu Logo" />
         </div>
 
-        <h1>{t("title")}</h1>
-        <p className="login-subtitle">{t("subtitle")}</p>
+        <h1>{t("login.title")}</h1>
+        <p className="login-subtitle">{t("login.subtitle")}</p>
 
-        <label>{t("emailLabel")}</label>
+        <label>{t("login.emailLabel")}</label>
         <div className="input-group">
           <UserRoundIcon className="input-icon" size={18} />
           <input
             type="email"
-            placeholder={t("emailLabel")}
+            placeholder={t("login.emailPlaceholder")}
             value={email}
+            disabled={loginLoading}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
         <div className="password-header">
-          <label>{t("password")}</label>
+          <label>{t("login.password")}</label>
 
           <span
             className="forgot"
-            onClick={() => setShowForgot(true)}
+            onClick={() => {
+              if (!loginLoading) {
+                setShowForgot(true);
+              }
+            }}
           >
-            {t("forgot")}
+            {t("login.forgot")}
           </span>
         </div>
 
@@ -110,31 +125,51 @@ export default function Login({ setShowLogin, setIsLoggedIn }) {
           <LockKeyhole className="input-icon" size={18} />
           <input
             type="password"
-            placeholder={t("password")}
+            placeholder={t("login.password")}
             value={password}
+            disabled={loginLoading}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleLogin();
+              }
+            }}
           />
         </div>
 
-        <button className="login-primary" onClick={handleLogin}>
-          {t("signIn")} <ArrowRight size={18} />
+        <button
+          className="login-primary"
+          onClick={handleLogin}
+          disabled={loginLoading}
+        >
+          {loginLoading ? "Signing in..." : t("login.signIn")}
+          <ArrowRight size={18} />
         </button>
 
         <div className="divider">
-          <span>{t("or")}</span>
+          <span>{t("login.or")}</span>
         </div>
 
-        <button className="login-secondary" onClick={handleOtpLogin}>
-          {t("otp")} <KeyRound size={18} />
+        <button
+          className="login-secondary"
+          onClick={handleOtpLogin}
+          disabled={loginLoading}
+        >
+          {t("login.otp")} <KeyRound size={18} />
         </button>
 
         <p className="login-footer">
-          {t("newUser")}
-          <span onClick={() => setShowSignUp(true)}>
-            {t("createAccount")}
+          {t("login.newUser")}
+          <span
+            onClick={() => {
+              if (!loginLoading) {
+                setShowSignUp(true);
+              }
+            }}
+          >
+            {t("login.createAccount")}
           </span>
         </p>
-
       </div>
     </div>
   );

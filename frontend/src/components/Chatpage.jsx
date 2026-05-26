@@ -40,7 +40,7 @@ export default function ChatPage({
   mode,
   setMode
 }) {
-  const { t } = useTranslation("chat");
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [menuOpen, setMenuOpen] = useState(null);
   const [renamingIndex, setRenamingIndex] = useState(null);
@@ -142,7 +142,7 @@ export default function ChatPage({
 
           // Always prepend a "New Chat" and make it active on initial load
           const newChatEntry = {
-            title: t("newChat"),
+            title: t("chat.newChat"),
             messages: [],
             chatId: null,
             tempId: 'initial-new-chat'
@@ -152,7 +152,7 @@ export default function ChatPage({
           activeChatIndexRef.current = 0;
         } else {
           setChats([{
-            title: t("newChat"),
+            title: t("chat.newChat"),
             messages: [],
             chatId: null,
             tempId: 'initial-empty-chat'
@@ -448,7 +448,7 @@ export default function ChatPage({
 
   const newChat = () => {
     const nextChat = {
-      title: t("newChat"),
+      title: t("chat.newChat"),
       messages: [],
       chatId: null,
       tempId: `new-chat-${Date.now()}`
@@ -491,7 +491,7 @@ export default function ChatPage({
     const updated = chats.filter((_, i) => i !== index);
     const finalChats = updated.length
       ? updated
-      : [{ title: t("newChat"), messages: [], chatId: null }];
+      : [{ title: t("chat.newChat"), messages: [], chatId: null }];
 
     setChats(finalChats);
 
@@ -670,7 +670,7 @@ export default function ChatPage({
               <div className="chat-brand">
                 <Scale size={20} />
               </div>
-              <span>{t("appName")}</span>
+              <span>{t("chat.appName")}</span>
             </div>
           </div>
         </div>
@@ -680,13 +680,13 @@ export default function ChatPage({
           onChange={(e) => setMode(e.target.value)}
           className="mode-select"
         >
-          <option value="simple">{t("simple")}</option>
-          <option value="detailed">{t("detailed")}</option>
+          <option value="simple">{t("chat.simple")}</option>
+          <option value="detailed">{t("chat.detailed")}</option>
         </select>
 
         <button className="new-chat-btn" onClick={newChat}>
           <Plus size={20} />
-          {t("newChat")}
+          {t("chat.newChat")}
         </button>
 
         <div className="chat-history">
@@ -744,7 +744,7 @@ export default function ChatPage({
                       setMenuOpen(null);
                     }}
                   >
-                    {t("rename")}
+                    {t("chat.rename")}
                   </button>
 
                   <button
@@ -753,7 +753,7 @@ export default function ChatPage({
                       clearChatAt(i);
                     }}
                   >
-                    {t("clear")}
+                    {t("chat.clear")}
                   </button>
 
                   <button
@@ -763,7 +763,7 @@ export default function ChatPage({
                       deleteChatAt(i);
                     }}
                   >
-                    {t("delete")}
+                    {t("chat.delete")}
                   </button>
                 </div>
               )}
@@ -777,7 +777,7 @@ export default function ChatPage({
               <User size={18} /> {t("Profile") || "Profile"}
             </button> */}
             <button className="logout-btn-sidebar" onClick={handleLogout}>
-              <LogOut size={18} /> {t("logout")}
+              <LogOut size={18} /> {t("chat.logout")}
             </button>
           </div>
         )}
@@ -842,8 +842,8 @@ export default function ChatPage({
                 <div className="welcome-icon">
                   <Scale size={48} />
                 </div>
-                <h1>{t("welcomeTitle", { name: userProfile?.name || currentUser?.displayName || (isDemo ? "Guest" : "User") })}</h1>
-                <p>{t("welcomeDesc")}</p>
+                <h1>{t("chat.welcomeTitle", { name: userProfile?.name || currentUser?.displayName || (isDemo ? "Guest" : "User") })}</h1>
+                <p>{t("chat.welcomeDesc")}</p>
               </div>
             </div>
           )}
@@ -915,7 +915,7 @@ export default function ChatPage({
                   <div className="message-actions">
                     {!isDemo && (
                       <div className="feedback-stars">
-                        <span className="feedback-label">{t("feedback")}:</span>
+                        <span className="feedback-label">{t("chat.feedback")}:</span>
                         {[1, 2, 3, 4, 5].map((rating) => {
                           const messageKey = getMessageKey(msg);
                           const selected = ratings[messageKey] || msg.rating;
@@ -1055,7 +1055,7 @@ export default function ChatPage({
           {messages.length === 0 && showDemoOptions && (
             <div className="demo-bottom">
               <div className="demo-options-row">
-                {(t("demoOptions", { returnObjects: true }) || []).map((q, j) => (
+                {(t("chat.demoOptions", { returnObjects: true }) || []).map((q, j) => (
                   <div
                     key={j}
                     className="demo-option"
@@ -1126,7 +1126,7 @@ export default function ChatPage({
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={t("placeholder")}
+              placeholder={t("chat.placeholder")}
               disabled={isDemo || loading}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             />
@@ -1187,9 +1187,9 @@ export default function ChatPage({
                 />
               </div>
               <div className="disclaimer-content">
-                <h2>{t("disclaimerTitle")}</h2>
+                <h2>{t("chat.disclaimerTitle")}</h2>
                 <p>
-                  {t("disclaimerDesc", { type: t(disclaimerType) })}
+                  {t("chat.disclaimerDesc", { type: t(chat.disclaimerType) })}
                 </p>
               </div>
               <div className="disclaimer-actions">
@@ -1197,7 +1197,7 @@ export default function ChatPage({
                   className="disclaimer-btn cancel"
                   onClick={() => setShowDisclaimer(false)}
                 >
-                  {t("cancel")}
+                  {t("chat.cancel")}
                 </button>
                 <button
                   className="disclaimer-btn consent"
@@ -1211,7 +1211,7 @@ export default function ChatPage({
                     setShowDisclaimer(false);
                   }}
                 >
-                  {t("consentBtn")}
+                  {t("chat.consentBtn")}
                 </button>
               </div>
             </div>

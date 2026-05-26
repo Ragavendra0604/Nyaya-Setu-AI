@@ -32,7 +32,7 @@ def ask():
         query = data.get("query", "")
         language = data.get("language", "English")
         mode = data.get("mode", "simple")
-        image_data = data.get("image_data")
+        image_data = data.get("chat.image_data")
         pdf_data = data.get("pdf_data")
         audio_data = data.get("audio_data")
 
